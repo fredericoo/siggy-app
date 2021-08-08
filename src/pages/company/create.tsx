@@ -36,13 +36,12 @@ const CreateCompanyRoute: React.VFC = () => {
     event.preventDefault()
     setIsLoading(true)
     try {
-      const result = await axios.post('/api/company/create', {
+      await axios.post('/api/company/create', {
         title,
         domain,
         planId,
       })
-      const createdId = result.data.id
-      push(`/company/${createdId}`)
+      push(`/companies`)
     } catch (error) {
       setIsLoading(false)
     }
@@ -85,7 +84,7 @@ const CreateCompanyRoute: React.VFC = () => {
         ) : (
           <>
             <Heading size="md">Select a plan</Heading>
-            <SimpleGrid columns={3} gap="8">
+            <SimpleGrid columns={{ base: 1, lg: 3 }} gap="8">
               {plans?.data?.map((plan) => (
                 <PlanCard
                   key={plan.id}
