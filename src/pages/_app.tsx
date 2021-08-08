@@ -1,11 +1,16 @@
 import { ChakraProvider } from '@chakra-ui/react'
 import { AppComponent } from 'next/dist/next-server/lib/router/router'
 import { theme } from '@/styles/theme'
+import Header from '@/components/organisms/Header'
+import { Provider as AuthProvider } from 'next-auth/client'
 
 const App: AppComponent = ({ Component, pageProps }) => {
   return (
     <ChakraProvider theme={theme}>
-      <Component {...pageProps} />
+      <AuthProvider session={pageProps.session}>
+        <Header />
+        <Component {...pageProps} />
+      </AuthProvider>
     </ChakraProvider>
   )
 }
