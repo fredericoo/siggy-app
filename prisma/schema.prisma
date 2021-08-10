@@ -18,17 +18,18 @@ model Plan {
 }
 
 model Company {
-  id        Int     @default(autoincrement()) @id
+  id        Int       @default(autoincrement()) @id
+  slug      String @unique
   title     String
   domain    String?
   plan    Plan?   @relation(fields: [planId], references: [id])
   planId    Int?
   admin    User?   @relation(fields: [adminId], references: [id])
-  adminId  Int?
+  adminId  Int
 }
 
 model User {
-  id            Int       @default(autoincrement()) @id
+  id                 Int       @default(autoincrement()) @id
   name          String?
   email         String?   @unique
   emailVerified DateTime? @map(name: "email_verified")

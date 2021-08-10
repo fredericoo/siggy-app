@@ -1,7 +1,7 @@
-import NextAuth from 'next-auth'
-import Adapters from 'next-auth/adapters'
-import Providers from 'next-auth/providers'
-import prisma from '@/lib/prisma'
+import NextAuth from 'next-auth';
+import Adapters from 'next-auth/adapters';
+import Providers from 'next-auth/providers';
+import prisma from '@/lib/prisma';
 
 export default NextAuth({
   providers: [
@@ -15,8 +15,8 @@ export default NextAuth({
   secret: process.env.SECRET,
   callbacks: {
     session: async (session, user) => {
-      session.id = user.id
-      return Promise.resolve(session)
+      session.id = user.id as number;
+      return Promise.resolve(session);
     },
   },
-})
+});

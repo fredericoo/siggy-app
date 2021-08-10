@@ -5,18 +5,18 @@ import {
   Text,
   UnorderedList,
   VStack,
-} from '@chakra-ui/react'
-import { Plan } from '@prisma/client'
-import { TERMS } from './terms'
+} from '@chakra-ui/react';
+import { Plan } from '@prisma/client';
+import { TERMS } from './terms';
 
-type PlanCardProps = {
-  plan: Plan
-  isSelected?: boolean
-  onSelect?: (planId: number) => void
-}
+export type PlanCardProps = {
+  plan: Plan;
+  isSelected?: boolean;
+  onSelect?: (planId: number) => void;
+};
 
 const PlanCard: React.VFC<PlanCardProps> = ({ plan, isSelected, onSelect }) => {
-  const terms = TERMS.plans[plan.title]
+  const terms = TERMS.plans[plan.title];
   return (
     <VStack
       borderRadius="xl"
@@ -48,7 +48,7 @@ const PlanCard: React.VFC<PlanCardProps> = ({ plan, isSelected, onSelect }) => {
         </Text>
       </Box>
     </VStack>
-  )
-}
+  );
+};
 
-export default PlanCard
+export default PlanCard;
