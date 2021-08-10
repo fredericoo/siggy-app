@@ -1,5 +1,8 @@
-import Message from '@/components/molecules/Message'
-import PlanCard from '@/components/molecules/PlanCard/PlanCard'
+import Spinner from '@/components/atoms/Spinner';
+import Message from '@/components/molecules/Message';
+import PlanCard, {
+  PlanCardProps,
+} from '@/components/molecules/PlanCard/PlanCard';
 import {
   Text,
   Button,
@@ -14,38 +17,44 @@ import {
   InputLeftAddon,
   SimpleGrid,
   VStack,
-} from '@chakra-ui/react'
-import { Plan } from '@prisma/client'
-import axios from 'axios'
-import { useRouter } from 'next/dist/client/router'
-import { useState } from 'react'
-import useSWR from 'swr'
+  Center,
+} from '@chakra-ui/react';
+import { Plan } from '@prisma/client';
+import axios from 'axios';
+import { useRouter } from 'next/dist/client/router';
+import { useState } from 'react';
+import slugify from 'slugify';
+import useSWR from 'swr';
 
-const fetcher = async () => axios.get<Plan[]>('/api/plans')
+const fetcher = async () => axios.get<Plan[]>('/api/plans');
 
 const CreateCompanyRoute: React.VFC = () => {
-  const { data: plans, error, revalidate } = useSWR('plans', fetcher)
-  const { back, push } = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const { back, push } = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [title, setTitle] = useState('')
-  const [domain, setDomain] = useState('')
-  const [planId, setPlanId] = useState<number | undefined>(undefined)
+  const [title, setTitle] = useState('');
+  const [domain, setDomain] = useState('');
+  const [planId, setPlanId] = useState<number | undefined>(undefined);
+  const slug = slugify(title, {
+    lower: true,
+    strict: true,
+  });
 
   const handleSubmit = async (event: React.SyntheticEvent) => {
-    event.preventDefault()
-    setIsLoading(true)
+    event.preventDefault();
+    setIsLoading(true);
     try {
       await axios.post('/api/company/create', {
         title,
         domain,
+        slug,
         planId,
-      })
-      push(`/companies`)
+      });
+      push(`/companies`);
     } catch (error) {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Container maxW="container.md" py={8}>
@@ -57,6 +66,7 @@ const CreateCompanyRoute: React.VFC = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+          <FormHelperText>{`https://siggy.io/company/${slug}`}</FormHelperText>
         </FormControl>
 
         <FormControl id="domain" isRequired isDisabled={isLoading}>
@@ -75,27 +85,7 @@ const CreateCompanyRoute: React.VFC = () => {
           </FormHelperText>
         </FormControl>
 
-        {error ? (
-          <Message
-            heading="Error loading plans :("
-            action="Retry"
-            onClick={() => revalidate()}
-          />
-        ) : (
-          <>
-            <Heading size="md">Select a plan</Heading>
-            <SimpleGrid columns={{ base: 1, lg: 3 }} gap="8">
-              {plans?.data?.map((plan) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  isSelected={plan.id === planId}
-                  onSelect={setPlanId}
-                />
-              ))}
-            </SimpleGrid>
-          </>
-        )}
+        <Plans onSelect={setPlanId} selectedId={planId} />
         <HStack>
           <Button
             type="submit"
@@ -114,7 +104,55 @@ const CreateCompanyRoute: React.VFC = () => {
         </HStack>
       </VStack>
     </Container>
-  )
-}
+  );
+};
 
-export default CreateCompanyRoute
+type PlansProps = {
+  onSelect: PlanCardProps['onSelect'];
+  selectedId?: number;
+};
+
+const Plans: React.VFC<PlansProps> = ({ onSelect, selectedId }) => {
+  const {
+    data: plans,
+    error,
+    revalidate,
+  } = useSWR('plans', fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  if (error)
+    return (
+      <Message
+        heading="Error loading plans :("
+        action="Retry"
+        onClick={() => revalidate()}
+      />
+    );
+
+  if (!plans)
+    return (
+      <Center h="128px">
+        <Spinner />
+        <Text fontSize="sm">Loading plans</Text>
+      </Center>
+    );
+
+  return (
+    <>
+      <Heading size="md">Select a plan</Heading>
+      <SimpleGrid columns={{ base: 1, lg: 3 }} gap="8">
+        {plans?.data?.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            isSelected={plan.id === selectedId}
+            onSelect={onSelect}
+          />
+        ))}
+      </SimpleGrid>
+    </>
+  );
+};
+
+export default CreateCompanyRoute;
