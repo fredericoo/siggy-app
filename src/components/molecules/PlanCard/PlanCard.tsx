@@ -38,15 +38,18 @@ const PlanCard: React.VFC<PlanCardProps> = ({ plan, isSelected, onSelect }) => {
           <ListItem key={feature}>{feature}</ListItem>
         ))}
       </UnorderedList>
-      <Box pt={4}>
-        {Intl.NumberFormat('en-GB', {
-          style: 'currency',
-          currency: 'GBP',
-        }).format(plan.monthlyFee)}{' '}
-        <Text as="span" fontSize="xs">
-          {TERMS.ppm}
-        </Text>
-      </Box>
+
+      {typeof plan.monthlyFee === 'number' && (
+        <Box pt={4}>
+          {Intl.NumberFormat('en-GB', {
+            style: 'currency',
+            currency: 'GBP',
+          }).format(plan.monthlyFee)}{' '}
+          <Text as="span" fontSize="xs">
+            {TERMS.ppm}
+          </Text>
+        </Box>
+      )}
     </VStack>
   );
 };

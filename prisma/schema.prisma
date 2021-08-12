@@ -57,7 +57,7 @@ model Company {
 model Plan {
   id        Int     @default(autoincrement()) @id
   title     String
-  monthlyFee  Decimal
+  monthlyFee  Float
   companies   Company[]
   templates   Template[]
 }
