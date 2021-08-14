@@ -15,12 +15,19 @@ const capitaliseFirstLetter = (string: string) =>
 
 const positions = ['director of treats', 'CMO', 'Co-sleeper'];
 
-export const generateMockParameters = (): Record<string, string> => ({
-  first_name: capitaliseFirstLetter(
-    names[Math.floor(Math.random() * names.length)]
-  ),
-  last_name: capitaliseFirstLetter(
-    names[Math.floor(Math.random() * names.length)]
-  ),
-  position: positions[Math.floor(Math.random() * positions.length)],
-});
+export const generateMockParameters = (
+  domain: string
+): Record<string, string> => {
+  const firstName = names[Math.floor(Math.random() * names.length)];
+  return {
+    first_name: capitaliseFirstLetter(firstName),
+    last_name: capitaliseFirstLetter(
+      names[Math.floor(Math.random() * names.length)]
+    ),
+    position: positions[Math.floor(Math.random() * positions.length)],
+    phone: `+${Math.floor(Math.random() * 99)} ${Math.floor(
+      Math.random() * 999999999
+    )}`,
+    email: `${firstName}@${domain}`,
+  };
+};

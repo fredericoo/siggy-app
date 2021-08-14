@@ -5,8 +5,12 @@ import Handlebars from 'handlebars';
 
 type SignatureCardProps = {
   signature: SignatureResponse;
+  domain: string;
 };
-const SignatureCard: React.VFC<SignatureCardProps> = ({ signature }) => {
+const SignatureCard: React.VFC<SignatureCardProps> = ({
+  signature,
+  domain,
+}) => {
   const template = Handlebars.compile(signature.template.html);
 
   return (
@@ -19,7 +23,9 @@ const SignatureCard: React.VFC<SignatureCardProps> = ({ signature }) => {
     >
       <Heading size="sm">{signature.template.title}</Heading>
       <Box
-        dangerouslySetInnerHTML={{ __html: template(generateMockParameters()) }}
+        dangerouslySetInnerHTML={{
+          __html: template(generateMockParameters(domain)),
+        }}
       />
     </Box>
   );

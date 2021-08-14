@@ -45,22 +45,26 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
     <Container maxW="container.lg" py={8}>
       <Heading>{company.title}</Heading>
 
-      <Tabs pt={4}>
+      <Tabs pt={4} mx={{ base: -4, md: 0 }}>
         <TabList>
-          <Tab>Templates</Tab>
+          <Tab>Signatures</Tab>
           <Tab>Settings</Tab>
         </TabList>
         <TabPanels>
-          <TabPanel px={0} py={4}>
+          <TabPanel px={{ md: 0 }} py={4}>
             <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
               {Array.isArray(signatures) &&
                 signatures?.map((signature) => (
-                  <SignatureCard key={signature.id} signature={signature} />
+                  <SignatureCard
+                    key={signature.id}
+                    signature={signature}
+                    domain={company.domain || ''}
+                  />
                 ))}
-              <Button h="100%">New signature</Button>
+              <Button>New signature</Button>
             </SimpleGrid>
           </TabPanel>
-          <TabPanel px={0} py={4}>
+          <TabPanel px={{ md: 0 }} py={4}>
             <Button onClick={handleDelete} colorScheme="red">
               Delete company
             </Button>
