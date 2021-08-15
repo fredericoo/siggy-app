@@ -1,4 +1,5 @@
 import SignatureCard from '@/components/molecules/SignatureCard';
+import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import prisma from '@/lib/prisma';
 import {
   Button,
@@ -27,11 +28,12 @@ const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
 
 const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   const { push } = useRouter();
-
   const { data: signatures } = useSWR<SignaturesQueryResponse>(
-    `/api/company/signatures?company_id=${company.id}`,
+    `/api/company/signatures?company_id=${company?.id}`,
     fetcher
   );
+
+  if (!company) return <UnauthorisedMessage />;
 
   const handleDelete = async () => {
     const request = await axios.post(`/api/company/delete`, {
@@ -80,20 +82,26 @@ export const getServerSideProps: GetServerSideProps = async ({
   req,
 }) => {
   const session = await getSession({ req });
+  if (!session || !params?.signatureId) return { props: { signature: null } };
+
   try {
     const userCompanies = session?.id
-      ? await prisma.user.findUnique({ where: { id: session?.id } }).companies()
+      ? await prisma.user
+          .findUnique({
+            where: { id: session?.id },
+            include: { companies: true },
+          })
+          .companies()
       : [];
-    const company = userCompanies.find(
-      (company) => company.slug === params?.slug
-    );
+    const company =
+      userCompanies.find((company) => company.slug === params?.slug) || null;
     return {
       props: { company },
     };
   } catch {
     return {
       props: {
-        company: undefined,
+        company: null,
       },
     };
   }

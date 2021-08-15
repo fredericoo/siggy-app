@@ -7,8 +7,8 @@ const handle: NextApiHandler = async (req, res) => {
 
   const session = await getSession({ req });
   if (!session) {
-    res.status(401).json({
-      message: 'Unauthorized',
+    res.json({
+      error: 'You are not logged in.',
     });
     return;
   }

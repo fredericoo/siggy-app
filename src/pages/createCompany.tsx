@@ -3,6 +3,7 @@ import Message from '@/components/molecules/Message';
 import PlanCard, {
   PlanCardProps,
 } from '@/components/molecules/PlanCard/PlanCard';
+import useUserSession from '@/lib/useUserSession';
 import {
   Text,
   Button,
@@ -18,10 +19,12 @@ import {
   SimpleGrid,
   VStack,
   Center,
+  useToast,
 } from '@chakra-ui/react';
 import { Plan } from '@prisma/client';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
+import Link from 'next/link';
 import { useState } from 'react';
 import slugify from 'slugify';
 import useSWR from 'swr';
@@ -29,9 +32,11 @@ import useSWR from 'swr';
 const fetcher = async () => axios.get<Plan[]>('/api/plans');
 
 const CreateCompanyRoute: React.VFC = () => {
-  const { back, push } = useRouter();
+  useUserSession();
+  const { push } = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [domain, setDomain] = useState('');
   const [planId, setPlanId] = useState<number | undefined>(undefined);
@@ -44,14 +49,30 @@ const CreateCompanyRoute: React.VFC = () => {
     event.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post('/api/company/create', {
+      const response = await axios.post('/api/company/create', {
         title,
         domain,
         slug,
         planId,
       });
-      push(`/companies`);
+      if (!response.data.error) {
+        push(`/company/${response.data.slug}`);
+      } else {
+        toast({
+          title: 'Oops',
+          description: response.data.error,
+          status: 'error',
+          duration: 3000,
+        });
+        setIsLoading(false);
+      }
     } catch (error) {
+      toast({
+        title: 'Oops',
+        description: 'An unexpected rror occurred.',
+        status: 'error',
+        duration: 3000,
+      });
       setIsLoading(false);
     }
   };
@@ -98,9 +119,11 @@ const CreateCompanyRoute: React.VFC = () => {
           </Button>
           <Text>or</Text>
 
-          <Button size="sm" variant="link" onClick={() => back()}>
-            Cancel
-          </Button>
+          <Link href="/companies" passHref>
+            <Button size="sm" variant="link" as="a">
+              Cancel
+            </Button>
+          </Link>
         </HStack>
       </VStack>
     </Container>
