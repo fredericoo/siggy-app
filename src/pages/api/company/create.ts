@@ -12,6 +12,17 @@ const handle: NextApiHandler = async (req, res) => {
     });
     return;
   }
+
+  const isUnique = !!(await prisma.company.findUnique({
+    where: { slug },
+    select: { slug: true },
+  }));
+  if (!isUnique) {
+    res.json({
+      error: `A company with the slug “${slug}” already exists.`,
+    });
+  }
+
   const result = await prisma.company.create({
     data: {
       title,
