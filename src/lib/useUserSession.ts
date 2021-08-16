@@ -7,12 +7,8 @@ const useUserSession = (): ReturnType<typeof useSession> => {
   const { push } = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (session) {
-        push('/companies');
-      } else {
-        push('/api/auth/signin');
-      }
+    if (!loading && !session) {
+      push('/api/auth/signin');
     }
   }, [loading, session, push]);
 

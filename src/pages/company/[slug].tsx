@@ -1,3 +1,4 @@
+import DeleteButton from '@/components/molecules/DeleteButton/DeleteButton';
 import SignatureCard from '@/components/molecules/SignatureCard';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import prisma from '@/lib/prisma';
@@ -17,6 +18,7 @@ import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
 import { useRouter } from 'next/dist/client/router';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { SignaturesQueryResponse } from '../api/company/signatures';
 
@@ -28,21 +30,29 @@ const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
 
 const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   const { push } = useRouter();
+  const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const { data: signatures } = useSWR<SignaturesQueryResponse>(
-    `/api/company/signatures?company_id=${company?.id}`,
+    `/api/company/signatures?companySlug=${company?.slug}`,
     fetcher
   );
 
   if (!company) return <UnauthorisedMessage />;
 
   const handleDelete = async () => {
-    const request = await axios.post(`/api/company/delete`, {
-      slug: company.slug,
-    });
-    if (request.status === 200) {
-      push('/companies');
+    setIsLoadingDelete(true);
+    try {
+      const request = await axios.post(`/api/company/delete`, {
+        slug: company.slug,
+      });
+      if (request.status === 200) {
+        push('/companies');
+      }
+    } catch (e) {
+      console.log(e);
     }
+    setIsLoadingDelete(false);
   };
+
   return (
     <Container maxW="container.lg" py={8}>
       <Heading>{company.title}</Heading>
@@ -61,15 +71,20 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
                     key={signature.id}
                     signature={signature}
                     domain={company.domain || ''}
+                    href={`/company/${company.slug}/${signature.id}`}
                   />
                 ))}
               <Button>New signature</Button>
             </SimpleGrid>
           </TabPanel>
           <TabPanel px={{ md: 0 }} py={4}>
-            <Button onClick={handleDelete} colorScheme="red">
+            <DeleteButton
+              isLoading={isLoadingDelete}
+              onDelete={handleDelete}
+              keyword={company.slug.toUpperCase()}
+            >
               Delete company
-            </Button>
+            </DeleteButton>
           </TabPanel>
         </TabPanels>
       </Tabs>
@@ -82,19 +97,20 @@ export const getServerSideProps: GetServerSideProps = async ({
   req,
 }) => {
   const session = await getSession({ req });
-  if (!session || !params?.signatureId) return { props: { signature: null } };
+  if (!session || !params?.slug) return { props: { signature: null } };
 
   try {
     const userCompanies = session?.id
       ? await prisma.user
           .findUnique({
             where: { id: session?.id },
-            include: { companies: true },
+            select: { companies: true },
           })
           .companies()
       : [];
     const company =
       userCompanies.find((company) => company.slug === params?.slug) || null;
+
     return {
       props: { company },
     };

@@ -12,17 +12,15 @@ type ErrorMessage = { error: string };
 export type SignaturesQueryResponse = SignatureResponse[] | ErrorMessage;
 
 const handle: NextApiHandler = async (req, res) => {
-  const { company_id } = req.query;
+  const { companySlug } = req.query;
 
   // If companyId is not a number, return Bad Request
-  if (typeof company_id !== 'string') {
+  if (typeof companySlug !== 'string') {
     res.status(400).json({
-      error: `Invalid companyId: ${company_id}`,
+      error: `Invalid company: ${companySlug}`,
     });
     return;
   }
-
-  const companyId = parseInt(company_id);
 
   const session = await getSession({ req });
   // If the user is not logged in, return Unauthorized
@@ -35,10 +33,10 @@ const handle: NextApiHandler = async (req, res) => {
 
   const userCompanies = await prisma.user
     .findUnique({ where: { id: session.id } })
-    .companies({ select: { id: true } });
+    .companies({ select: { slug: true } });
 
   // Do not allow to see a company plan if the user is not part of it
-  if (!userCompanies.find((company) => company.id === companyId)) {
+  if (!userCompanies.find((company) => company.slug === companySlug)) {
     res.status(401).json({
       error: 'User not part of the company',
     });
@@ -46,7 +44,7 @@ const handle: NextApiHandler = async (req, res) => {
   }
 
   const signatures = await prisma.signature.findMany({
-    where: { companyId },
+    where: { companySlug },
     select: { id: true, template: { select: { html: true, title: true } } },
   });
 

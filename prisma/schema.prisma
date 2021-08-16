@@ -41,8 +41,8 @@ model Signature {
   id    String  @id @default(uuid())
   template  Template   @relation(fields: [templateId], references: [id])
   templateId  Int
-  company   Company    @relation(fields: [companyId], references: [id])
-  companyId   Int
+  company   Company    @relation(fields: [companySlug], references: [slug])
+  companySlug   String
 }
 
 model Company {

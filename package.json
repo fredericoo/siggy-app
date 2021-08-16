@@ -20,11 +20,11 @@
     "@prisma/client": "^2.29.0",
     "axios": "^0.21.1",
     "framer-motion": "^4",
-    "handlebars": "^4.7.7",
     "next": "11.0.1",
     "next-auth": "^3.27.3",
     "react": "17.0.2",
     "react-dom": "17.0.2",
+    "react-hook-form": "^7.12.2",
     "slugify": "^1.6.0",
     "swr": "^0.5.6"
   },

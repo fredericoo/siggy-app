@@ -1,33 +1,42 @@
+import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
 import { SignatureResponse } from '@/pages/api/company/signatures';
 import { Box, Heading } from '@chakra-ui/react';
-import Handlebars from 'handlebars';
+import Link from 'next/link';
 
 type SignatureCardProps = {
   signature: SignatureResponse;
   domain: string;
+  href: string;
 };
 const SignatureCard: React.VFC<SignatureCardProps> = ({
   signature,
   domain,
+  href,
 }) => {
-  const template = Handlebars.compile(signature.template.html);
+  const template = parseHandlebars(
+    signature.template.html,
+    generateMockParameters(domain)
+  );
 
   return (
-    <Box
-      p={4}
-      border="1px solid"
-      borderColor="gray.200"
-      borderRadius="xl"
-      key={signature.id}
-    >
-      <Heading size="sm">{signature.template.title}</Heading>
+    <Link href={href} passHref>
       <Box
-        dangerouslySetInnerHTML={{
-          __html: template(generateMockParameters(domain)),
-        }}
-      />
-    </Box>
+        as="a"
+        p={4}
+        border="1px solid"
+        borderColor="gray.200"
+        borderRadius="xl"
+        key={signature.id}
+      >
+        <Heading size="sm">{signature.template.title}</Heading>
+        <Box
+          dangerouslySetInnerHTML={{
+            __html: template,
+          }}
+        />
+      </Box>
+    </Link>
   );
 };
 
