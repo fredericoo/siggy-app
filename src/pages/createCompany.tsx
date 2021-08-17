@@ -1,4 +1,5 @@
 import Spinner from '@/components/atoms/Spinner';
+import FormErrorHelper from '@/components/molecules/FormErrorHelper/FormErrorHelper';
 import Message from '@/components/molecules/Message';
 import PlanCard, {
   PlanCardProps,
@@ -20,40 +21,54 @@ import {
   VStack,
   Center,
   useToast,
+  Box,
 } from '@chakra-ui/react';
 import { Plan } from '@prisma/client';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { SubmitHandler, useForm, UseFormRegister } from 'react-hook-form';
 import slugify from 'slugify';
 import useSWR from 'swr';
 
 const fetcher = async () => axios.get<Plan[]>('/api/plans');
+
+type FormInputs = {
+  title: string;
+  slug: string;
+  domain: string;
+  planId: number;
+};
+
+const toSlug = (str: string) =>
+  slugify(str || '', { lower: true, strict: true });
 
 const CreateCompanyRoute: React.VFC = () => {
   useUserSession();
   const { push } = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const toast = useToast();
-  const [title, setTitle] = useState('');
-  const [domain, setDomain] = useState('');
-  const [planId, setPlanId] = useState<number | undefined>(undefined);
-  const slug = slugify(title, {
-    lower: true,
-    strict: true,
-  });
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormInputs>();
+  const [planId, title] = watch(['planId', 'title']);
 
-  const handleSubmit = async (event: React.SyntheticEvent) => {
-    event.preventDefault();
+  useEffect(() => {
+    setValue('slug', toSlug(title));
+  }, [setValue, title]);
+
+  const toast = useToast();
+
+  const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setIsLoading(true);
     try {
       const response = await axios.post('/api/company/create', {
-        title,
-        domain,
-        slug,
-        planId,
+        data,
       });
       if (!response.data.error) {
         push(`/company/${response.data.slug}`);
@@ -79,16 +94,51 @@ const CreateCompanyRoute: React.VFC = () => {
 
   return (
     <Container maxW="container.md" py={8}>
-      <VStack as="form" spacing={8} onSubmit={handleSubmit}>
-        <FormControl id="name" isRequired isDisabled={isLoading}>
-          <FormLabel>Company Name</FormLabel>
-          <Input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <FormHelperText>{`https://siggy.io/company/${slug}`}</FormHelperText>
-        </FormControl>
+      <VStack
+        as="form"
+        spacing={8}
+        onSubmit={handleSubmit<FormInputs>(onSubmit)}
+      >
+        <Box w="100%">
+          <FormControl
+            id="name"
+            isRequired
+            isDisabled={isLoading}
+            isInvalid={!!errors.title}
+          >
+            <FormLabel>Company Name</FormLabel>
+            <Input
+              type="text"
+              {...register('title', { required: true })}
+              isRequired={false}
+            />
+            <FormErrorHelper error={errors.title} />
+          </FormControl>
+          <FormControl id="slug" isInvalid={!!errors.slug}>
+            <FormHelperText>
+              <Box display="flex">
+                <Text
+                  flexGrow={1}
+                  whiteSpace="nowrap"
+                >{`https://siggy.io/company/`}</Text>
+                <Input
+                  borderRadius="none"
+                  bg={errors.slug ? 'red.100' : 'inherit'}
+                  fontSize="inherit"
+                  display="inline-block"
+                  variant="unstyled"
+                  type="text"
+                  isRequired={false}
+                  {...register('slug', {
+                    required: true,
+                    validate: (str) => str === toSlug(str),
+                  })}
+                />
+              </Box>
+              <FormErrorHelper error={errors.slug} />
+            </FormHelperText>
+          </FormControl>
+        </Box>
 
         <FormControl id="domain" isRequired isDisabled={isLoading}>
           <FormLabel>Email domain</FormLabel>
@@ -97,8 +147,8 @@ const CreateCompanyRoute: React.VFC = () => {
             <Input
               type="text"
               placeholder="yourdomain.com"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
+              {...register('domain')}
+              isRequired={false}
             />
           </InputGroup>
           <FormHelperText>
@@ -106,7 +156,11 @@ const CreateCompanyRoute: React.VFC = () => {
           </FormHelperText>
         </FormControl>
 
-        <Plans onSelect={setPlanId} selectedId={planId} />
+        <Plans
+          onSelect={(planId: number) => setValue('planId', planId)}
+          selectedId={planId}
+          register={register}
+        />
         <HStack>
           <Button
             type="submit"
@@ -133,9 +187,10 @@ const CreateCompanyRoute: React.VFC = () => {
 type PlansProps = {
   onSelect: PlanCardProps['onSelect'];
   selectedId?: number;
+  register: UseFormRegister<FormInputs>;
 };
 
-const Plans: React.VFC<PlansProps> = ({ onSelect, selectedId }) => {
+const Plans: React.VFC<PlansProps> = ({ onSelect, selectedId, register }) => {
   const {
     data: plans,
     error,
@@ -167,6 +222,7 @@ const Plans: React.VFC<PlansProps> = ({ onSelect, selectedId }) => {
       <SimpleGrid columns={{ base: 1, lg: 3 }} gap="8">
         {plans?.data?.map((plan) => (
           <PlanCard
+            {...register}
             key={plan.id}
             plan={plan}
             isSelected={plan.id === selectedId}
