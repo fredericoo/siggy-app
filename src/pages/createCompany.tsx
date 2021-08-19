@@ -67,9 +67,8 @@ const CreateCompanyRoute: React.VFC = () => {
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setIsLoading(true);
     try {
-      const response = await axios.post('/api/company/create', {
-        data,
-      });
+      console.log(data);
+      const response = await axios.post('/api/company/create', data);
       if (!response.data.error) {
         push(`/company/${response.data.slug}`);
       } else {
