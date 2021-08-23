@@ -34,7 +34,7 @@ const DeleteButton: React.FC<DeleteButtonProps> = ({
 
   return (
     <>
-      <Button colorScheme="red" onClick={onOpen}>
+      <Button variant="danger" onClick={onOpen}>
         {children}
       </Button>
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -63,7 +63,7 @@ const DeleteButton: React.FC<DeleteButtonProps> = ({
               <HStack spacing={4}>
                 <Button
                   type="submit"
-                  colorScheme="red"
+                  variant="danger"
                   isLoading={isLoading}
                   isDisabled={keyword !== input}
                 >

@@ -29,7 +29,11 @@ const CompaniesList: React.VFC<CompaniesListProps> = ({
         {companies.map((company) => (
           <CompanyCard key={company.id} company={company} />
         ))}
-        <Button onClick={() => push('/createCompany')} h="100%">
+        <Button
+          variant="primary"
+          onClick={() => push('/create-company')}
+          h="100%"
+        >
           New company
         </Button>
       </SimpleGrid>
@@ -42,7 +46,7 @@ const CompaniesList: React.VFC<CompaniesListProps> = ({
       body="Start by creating one:"
       action="Create a company"
       onClick={() => {
-        push('/createCompany');
+        push('/create-company');
       }}
     />
   );

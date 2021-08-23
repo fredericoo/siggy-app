@@ -1,11 +1,11 @@
 import DeleteButton from '@/components/molecules/DeleteButton/DeleteButton';
 import SignatureCard from '@/components/molecules/SignatureCard';
+import PageHeader from '@/components/organisms/PageHeader';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import prisma from '@/lib/prisma';
 import {
   Button,
   Container,
-  Heading,
   SimpleGrid,
   Tab,
   TabList,
@@ -18,6 +18,7 @@ import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
 import { useRouter } from 'next/dist/client/router';
+import Link from 'next/link';
 import { useState } from 'react';
 import useSWR from 'swr';
 import { SignaturesQueryResponse } from '../api/company/signatures';
@@ -54,41 +55,59 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   };
 
   return (
-    <Container maxW="container.lg" py={8}>
-      <Heading>{company.title}</Heading>
+    <>
+      <PageHeader
+        title={company.title}
+        breadcrumbs={[{ label: 'Companies', href: '/companies' }]}
+      />
 
-      <Tabs pt={4} mx={{ base: -4, md: 0 }}>
-        <TabList>
-          <Tab>Signatures</Tab>
-          <Tab>Settings</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel px={{ md: 0 }} py={4}>
-            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-              {Array.isArray(signatures) &&
-                signatures?.map((signature) => (
-                  <SignatureCard
-                    key={signature.id}
-                    signature={signature}
-                    domain={company.domain || ''}
-                    href={`/company/${company.slug}/${signature.id}`}
-                  />
-                ))}
-              <Button>New signature</Button>
-            </SimpleGrid>
-          </TabPanel>
-          <TabPanel px={{ md: 0 }} py={4}>
-            <DeleteButton
-              isLoading={isLoadingDelete}
-              onDelete={handleDelete}
-              keyword={company.slug.toUpperCase()}
-            >
-              Delete company
-            </DeleteButton>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-    </Container>
+      <Container maxW="container.lg">
+        <Tabs variant="custom" pt={4}>
+          <TabList>
+            <Tab>Signatures</Tab>
+            <Tab>Contacts</Tab>
+            <Tab>Settings</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel px={{ md: 0 }} py={4}>
+              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
+                {Array.isArray(signatures) &&
+                  signatures?.map((signature) => (
+                    <SignatureCard
+                      key={signature.id}
+                      signature={signature}
+                      domain={company.domain || ''}
+                      href={`/company/${company.slug}/${signature.id}`}
+                    />
+                  ))}
+                <Link
+                  href={`/company/${company.slug}/create-signature`}
+                  passHref
+                >
+                  <Button variant="primary" as="a">
+                    New signature
+                  </Button>
+                </Link>
+              </SimpleGrid>
+            </TabPanel>
+
+            <TabPanel px={{ md: 0 }} py={4}>
+              You have no contacts
+            </TabPanel>
+
+            <TabPanel px={{ md: 0 }} py={4}>
+              <DeleteButton
+                isLoading={isLoadingDelete}
+                onDelete={handleDelete}
+                keyword={company.slug.toUpperCase()}
+              >
+                Delete company
+              </DeleteButton>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Container>
+    </>
   );
 };
 

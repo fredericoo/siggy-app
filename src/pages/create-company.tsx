@@ -1,14 +1,15 @@
 import Spinner from '@/components/atoms/Spinner';
+import ActionSheet from '@/components/molecules/ActionSheet/ActionSheet';
 import FormErrorHelper from '@/components/molecules/FormErrorHelper/FormErrorHelper';
 import Message from '@/components/molecules/Message';
 import PlanCard, {
   PlanCardProps,
 } from '@/components/molecules/PlanCard/PlanCard';
+import PageHeader from '@/components/organisms/PageHeader';
 import useUserSession from '@/lib/useUserSession';
 import {
   Text,
   Button,
-  Container,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -67,7 +68,6 @@ const CreateCompanyRoute: React.VFC = () => {
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setIsLoading(true);
     try {
-      console.log(data);
       const response = await axios.post('/api/company/create', data);
       if (!response.data.error) {
         push(`/company/${response.data.slug}`);
@@ -92,94 +92,94 @@ const CreateCompanyRoute: React.VFC = () => {
   };
 
   return (
-    <Container maxW="container.md" py={8}>
-      <VStack
+    <>
+      <PageHeader
+        title="New Company"
+        breadcrumbs={[{ label: 'Companies', href: '/companies' }]}
+      />
+      <ActionSheet
         as="form"
-        spacing={8}
         onSubmit={handleSubmit<FormInputs>(onSubmit)}
+        footer={
+          <HStack justify="center">
+            <Button
+              type="submit"
+              size="lg"
+              variant="primary"
+              isLoading={isLoading}
+            >
+              Create
+            </Button>
+            <Text>or</Text>
+
+            <Link href="/companies" passHref>
+              <Button size="sm" variant="link" as="a">
+                Cancel
+              </Button>
+            </Link>
+          </HStack>
+        }
       >
-        <Box w="100%">
-          <FormControl
-            id="name"
-            isRequired
-            isDisabled={isLoading}
-            isInvalid={!!errors.title}
-          >
-            <FormLabel>Company Name</FormLabel>
-            <Input
-              type="text"
-              {...register('title', { required: true })}
-              isRequired={false}
-            />
-            <FormErrorHelper error={errors.title} />
-          </FormControl>
-          <FormControl id="slug" isInvalid={!!errors.slug}>
+        <VStack spacing={8}>
+          <Box w="100%">
+            <FormControl
+              id="name"
+              isRequired
+              isDisabled={isLoading}
+              isInvalid={!!errors.title}
+            >
+              <FormLabel>Company Name</FormLabel>
+              <Input type="text" {...register('title', { required: true })} />
+              <FormErrorHelper error={errors.title} />
+            </FormControl>
+            <FormControl id="slug" isInvalid={!!errors.slug}>
+              <FormHelperText>
+                <Box display="flex">
+                  <Text
+                    flexGrow={1}
+                    whiteSpace="nowrap"
+                  >{`https://siggy.io/company/`}</Text>
+                  <Input
+                    borderRadius="none"
+                    bg={errors.slug ? 'red.100' : 'inherit'}
+                    fontSize="inherit"
+                    display="inline-block"
+                    variant="unstyled"
+                    type="text"
+                    {...register('slug', {
+                      required: true,
+                      validate: (str) => str === toSlug(str),
+                    })}
+                  />
+                </Box>
+                <FormErrorHelper error={errors.slug} />
+              </FormHelperText>
+            </FormControl>
+          </Box>
+
+          <FormControl id="domain" isRequired isDisabled={isLoading}>
+            <FormLabel>Email domain</FormLabel>
+            <InputGroup>
+              <InputLeftAddon>employee@</InputLeftAddon>
+              <Input
+                type="text"
+                placeholder="yourdomain.com"
+                {...register('domain')}
+              />
+            </InputGroup>
             <FormHelperText>
-              <Box display="flex">
-                <Text
-                  flexGrow={1}
-                  whiteSpace="nowrap"
-                >{`https://siggy.io/company/`}</Text>
-                <Input
-                  borderRadius="none"
-                  bg={errors.slug ? 'red.100' : 'inherit'}
-                  fontSize="inherit"
-                  display="inline-block"
-                  variant="unstyled"
-                  type="text"
-                  isRequired={false}
-                  {...register('slug', {
-                    required: true,
-                    validate: (str) => str === toSlug(str),
-                  })}
-                />
-              </Box>
-              <FormErrorHelper error={errors.slug} />
+              You will not be able to change this in the future!
             </FormHelperText>
           </FormControl>
-        </Box>
 
-        <FormControl id="domain" isRequired isDisabled={isLoading}>
-          <FormLabel>Email domain</FormLabel>
-          <InputGroup>
-            <InputLeftAddon>employee@</InputLeftAddon>
-            <Input
-              type="text"
-              placeholder="yourdomain.com"
-              {...register('domain')}
-              isRequired={false}
-            />
-          </InputGroup>
-          <FormHelperText>
-            You will not be able to change this in the future!
-          </FormHelperText>
-        </FormControl>
-
-        <Plans
-          onSelect={(planId: number) => setValue('planId', planId)}
-          selectedId={planId}
-          register={register}
-        />
-        <HStack>
-          <Button
-            type="submit"
-            size="lg"
-            variant="solid"
-            colorScheme="orange"
-            isLoading={isLoading}
-          >
-            Create
-          </Button>
-          <Text>or</Text>
-
-          <Link href="/companies" passHref>
-            <Button size="sm" variant="link" as="a">
-              Cancel
-            </Button>
-          </Link>
-        </HStack>
-      </VStack>
-    </Container>
+          <Plans
+            onSelect={(planId: number) => setValue('planId', planId)}
+            selectedId={planId}
+            register={register}
+          />
+        </VStack>
+      </ActionSheet>
+    </>
   );
 };
 

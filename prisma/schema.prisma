@@ -39,6 +39,7 @@ model TemplateParameter {
 
 model Signature {
   id    String  @id @default(uuid())
+  title   String
   template  Template   @relation(fields: [templateId], references: [id])
   templateId  Int
   company   Company    @relation(fields: [companySlug], references: [slug])

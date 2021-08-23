@@ -1,18 +1,15 @@
+import PageHeader from '@/components/organisms/PageHeader';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
+import { parseHandlebars } from '@/lib/handlebars';
+import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Container,
-} from '@chakra-ui/react';
-import { Company, Signature } from '@prisma/client';
+import { Box, Container } from '@chakra-ui/react';
+import { Company, Signature, Template } from '@prisma/client';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
-import Link from 'next/link';
 
 type SignatureDetailsProps = {
-  signature: Signature & { index: number };
+  signature: Signature & { template: Template };
   company: Company;
 };
 
@@ -21,33 +18,30 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   company,
 }) => {
   if (!signature) return <UnauthorisedMessage />;
+
+  const html = parseHandlebars(
+    signature.template.html,
+    generateMockParameters(company.domain || 'siggy.io')
+  );
+
   return (
-    <Container maxW="container.lg" py={4}>
-      <Breadcrumb
-        separator="→"
-        border="1px solid"
-        py={2}
-        px={4}
-        borderRadius="xl"
-        borderColor="gray.200"
-      >
-        <BreadcrumbItem>
-          <Link href={`/companies`} passHref>
-            <BreadcrumbLink>Companies</BreadcrumbLink>
-          </Link>
-        </BreadcrumbItem>
-        <BreadcrumbItem>
-          <Link href={`/company/${company.slug}`} passHref>
-            <BreadcrumbLink>{company.title}</BreadcrumbLink>
-          </Link>
-        </BreadcrumbItem>
-        <BreadcrumbItem isCurrentPage>
-          <Link href={`/company/${company.slug}/${signature.id}`} passHref>
-            <BreadcrumbLink>Signature #{signature.index + 1}</BreadcrumbLink>
-          </Link>
-        </BreadcrumbItem>
-      </Breadcrumb>
-    </Container>
+    <>
+      <PageHeader
+        title={signature.title}
+        breadcrumbs={[
+          { label: 'Companies', href: '/companies' },
+          { label: company.title, href: `/company/${company.slug}` },
+        ]}
+      />
+      <Container maxW="container.lg" py={4}>
+        <Box
+          minW="600px"
+          dangerouslySetInnerHTML={{
+            __html: html,
+          }}
+        />
+      </Container>
+    </>
   );
 };
 
@@ -69,7 +63,7 @@ export const getServerSideProps: GetServerSideProps = async ({
             select: {
               slug: true,
               title: true,
-              signatures: { select: { template: true, id: true } },
+              signatures: { select: { title: true, template: true, id: true } },
             },
           })
       : [];
@@ -79,17 +73,13 @@ export const getServerSideProps: GetServerSideProps = async ({
 
     if (!company) return { props: { signature: null, company: null } };
 
-    const signatureIndex = company?.signatures.findIndex(
-      (signature) => signature.id === params.signatureId
-    );
-
     const signature =
       company?.signatures.find(
         (signature) => signature.id === params.signatureId
       ) || null;
 
     return {
-      props: { signature: { ...signature, index: signatureIndex }, company },
+      props: { signature, company },
     };
   } catch {
     return {

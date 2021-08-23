@@ -2,15 +2,19 @@ import { useSession } from 'next-auth/client';
 import { useRouter } from 'next/dist/client/router';
 import { useEffect } from 'react';
 
-const useUserSession = (): ReturnType<typeof useSession> => {
+const useUserSession = (redirectTo?: string): ReturnType<typeof useSession> => {
   const [session, loading] = useSession();
   const { push } = useRouter();
 
   useEffect(() => {
-    if (!loading && !session) {
-      push('/api/auth/signin');
+    if (!loading) {
+      if (!session) {
+        push('/api/auth/signin');
+      } else {
+        redirectTo && push(redirectTo);
+      }
     }
-  }, [loading, session, push]);
+  }, [loading, session, push, redirectTo]);
 
   return [session, loading];
 };

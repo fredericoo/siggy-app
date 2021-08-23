@@ -1,13 +1,13 @@
-import React from 'react'
-import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/client'
-import { Button, HStack, Text } from '@chakra-ui/react'
-import Image from 'next/image'
+import React from 'react';
+import Link from 'next/link';
+import { signOut, useSession } from 'next-auth/client';
+import { Button, HStack, Text } from '@chakra-ui/react';
+import Image from 'next/image';
 
 const Account: React.FC = () => {
-  const [session, loading] = useSession()
+  const [session, loading] = useSession();
 
-  if (loading) return null
+  if (loading) return null;
 
   if (session) {
     return (
@@ -23,18 +23,16 @@ const Account: React.FC = () => {
           )}
           <Text>{session.user?.name}</Text>
         </HStack>
-        <Button variant="solid" onClick={() => signOut()}>
-          Log out
-        </Button>
+        <Button onClick={() => signOut()}>Log out</Button>
       </HStack>
-    )
+    );
   }
 
   return (
     <Link href="/api/auth/signin" passHref>
       <Button variant="ghost">Log in</Button>
     </Link>
-  )
-}
+  );
+};
 
-export default Account
+export default Account;

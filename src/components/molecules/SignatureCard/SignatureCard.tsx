@@ -1,7 +1,6 @@
-import { parseHandlebars } from '@/lib/handlebars';
-import { generateMockParameters } from '@/lib/mockParameters';
+import Card from '@/components/atoms/Card';
 import { SignatureResponse } from '@/pages/api/company/signatures';
-import { Box, Heading } from '@chakra-ui/react';
+import { Heading, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 
 type SignatureCardProps = {
@@ -9,33 +8,13 @@ type SignatureCardProps = {
   domain: string;
   href: string;
 };
-const SignatureCard: React.VFC<SignatureCardProps> = ({
-  signature,
-  domain,
-  href,
-}) => {
-  const template = parseHandlebars(
-    signature.template.html,
-    generateMockParameters(domain)
-  );
-
+const SignatureCard: React.VFC<SignatureCardProps> = ({ signature, href }) => {
   return (
     <Link href={href} passHref>
-      <Box
-        as="a"
-        p={4}
-        border="1px solid"
-        borderColor="gray.200"
-        borderRadius="xl"
-        key={signature.id}
-      >
-        <Heading size="sm">{signature.template.title}</Heading>
-        <Box
-          dangerouslySetInnerHTML={{
-            __html: template,
-          }}
-        />
-      </Box>
+      <Card as="a" align="initial">
+        <Heading size="sm">{signature.title}</Heading>
+        <Text>Using template ‘{signature.template.title}’</Text>
+      </Card>
     </Link>
   );
 };

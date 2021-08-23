@@ -3,7 +3,7 @@ import { Signature, Template } from '@prisma/client';
 import { NextApiHandler } from 'next';
 import { getSession } from 'next-auth/client';
 
-export type SignatureResponse = Pick<Signature, 'id'> & {
+export type SignatureResponse = Pick<Signature, 'id' | 'title'> & {
   template: Pick<Template, 'html' | 'title'>;
 };
 
@@ -45,7 +45,11 @@ const handle: NextApiHandler = async (req, res) => {
 
   const signatures = await prisma.signature.findMany({
     where: { companySlug },
-    select: { id: true, template: { select: { html: true, title: true } } },
+    select: {
+      title: true,
+      id: true,
+      template: { select: { html: true, title: true } },
+    },
   });
 
   return res.status(200).json(signatures);

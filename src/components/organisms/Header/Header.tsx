@@ -7,7 +7,7 @@ const menuOptions = [{ label: 'Companies', href: '/companies' }];
 
 const Header: React.FC = () => {
   return (
-    <Box borderBlockEnd="1px solid" borderBlockEndColor="gray.300">
+    <Box borderBlockEnd="1px solid" bg="white" borderBlockEndColor="gray.200">
       <Container maxW="container.lg">
         <HStack as="nav" spacing={8} h="14">
           <Link href="/" passHref>

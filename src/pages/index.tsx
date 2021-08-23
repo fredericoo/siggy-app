@@ -3,7 +3,7 @@ import Spinner from '@/components/atoms/Spinner';
 import useUserSession from '@/lib/useUserSession';
 
 const Home: React.FC = () => {
-  useUserSession();
+  useUserSession('/companies');
 
   return (
     <VStack py={8}>
