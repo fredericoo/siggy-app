@@ -23,6 +23,10 @@ const handle: NextApiHandler = async (req, res) => {
     return;
   }
 
+  await prisma.signature.deleteMany({
+    where: { companySlug: slug },
+  });
+
   const result = await prisma.company.delete({
     where: { slug },
   });

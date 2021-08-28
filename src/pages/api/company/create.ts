@@ -7,11 +7,23 @@ const handle: NextApiHandler = async (req, res) => {
 
   const session = await getSession({ req });
   if (!session) {
-    res.status(401).json({
-      message: 'Unauthorized',
+    res.json({
+      error: 'You are not logged in.',
     });
     return;
   }
+
+  const isUnique = !(await prisma.company.findUnique({
+    where: { slug },
+    select: { slug: true },
+  }));
+  if (!isUnique) {
+    res.json({
+      error: `A company with the slug “${slug}” already exists.`,
+    });
+    return;
+  }
+
   const result = await prisma.company.create({
     data: {
       title,

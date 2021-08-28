@@ -10,11 +10,40 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Plan {
+model Template {
   id        Int     @default(autoincrement()) @id
   title     String
-  monthlyFee  Int
-  companies   Company[]
+  html      String
+  plan    Plan?   @relation(fields: [planId], references: [id])
+  planId  Int?
+  signatures  Signature[]
+  parameters  TemplateParameter[]
+}
+
+model TemplateParameterType {
+  id        Int     @default(autoincrement()) @id
+  title     String
+  parameters   TemplateParameter[]
+}
+
+model TemplateParameter {
+  id        Int     @default(autoincrement()) @id
+  title     String
+  handlebar     String
+  isRequired     Boolean
+  template   Template? @relation(fields: [templateId], references: [id])
+  templateId Int?
+  type   TemplateParameterType? @relation(fields: [typeId], references: [id])
+  typeId Int?
+}
+
+model Signature {
+  id    String  @id @default(uuid())
+  title   String
+  template  Template   @relation(fields: [templateId], references: [id])
+  templateId  Int
+  company   Company    @relation(fields: [companySlug], references: [slug])
+  companySlug   String
 }
 
 model Company {
@@ -26,6 +55,15 @@ model Company {
   planId    Int?
   admin    User?   @relation(fields: [adminId], references: [id])
   adminId  Int
+  signatures  Signature[]
+}
+
+model Plan {
+  id        Int     @default(autoincrement()) @id
+  title     String
+  monthlyFee  Float
+  companies   Company[]
+  templates   Template[]
 }
 
 model User {

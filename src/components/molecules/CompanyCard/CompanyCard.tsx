@@ -1,4 +1,5 @@
-import { Box, Heading, Text } from '@chakra-ui/react';
+import Card from '@/components/atoms/Card';
+import { Heading, Text } from '@chakra-ui/react';
 import { Company } from '@prisma/client';
 import Link from 'next/link';
 
@@ -9,13 +10,7 @@ type CompanyCardProps = {
 const CompanyCard: React.VFC<CompanyCardProps> = ({ company }) => {
   return (
     <Link href={`/company/${company.slug}`} passHref>
-      <Box
-        as="a"
-        borderRadius="xl"
-        p={4}
-        border="1px solid"
-        borderColor="gray.100"
-      >
+      <Card as="a">
         <Heading size="sm">{company.title}</Heading>
         <Text>
           <Text as="span" color="gray.400">
@@ -23,7 +18,7 @@ const CompanyCard: React.VFC<CompanyCardProps> = ({ company }) => {
           </Text>
           @{company.domain}
         </Text>
-      </Box>
+      </Card>
     </Link>
   );
 };
