@@ -94,7 +94,7 @@ const CreateCompanyRoute: React.VFC = () => {
   return (
     <>
       <PageHeader
-        title="New Company"
+        title="Create Company"
         breadcrumbs={[{ label: 'Companies', href: '/companies' }]}
       />
       <ActionSheet
