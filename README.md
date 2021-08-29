@@ -40,7 +40,16 @@ You will need to supply your own GitHub OAuth credentials.
 
 ## Database
 
-We're using Prisma to manage our database. Having a local Postgres database is easy:
+We're using Prisma to manage our database.
+
+### Running locally
+
+To setup a postgresSQL database locally, run the following:
 
 - Run `docker-compose up -d` to setup the database
 - Run `yarn db:push` to create your database
+
+### Migration
+
+If you made any changes to `/prisma/schema.prisma`, you can migrate the database with `yarn db:migrate`.
+Append `--name NAME` to the command to specify a name for the migration.
