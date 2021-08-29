@@ -11,7 +11,8 @@
     "test": "jest",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@chakra-ui/react": "^1.6.5",
