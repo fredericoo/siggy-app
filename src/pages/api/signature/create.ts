@@ -13,7 +13,11 @@ const handle: NextApiHandler = async (req, res) => {
     return;
   }
 
-  if (!title || !templateId || !companySlug) {
+  if (
+    typeof title !== 'string' ||
+    typeof templateId !== 'number' ||
+    typeof companySlug !== 'string'
+  ) {
     res.json({ error: 'One or more fields are missing' });
     return;
   }
