@@ -6,7 +6,9 @@ import prisma from '@/lib/prisma';
 import {
   Button,
   Container,
+  Heading,
   SimpleGrid,
+  Text,
   Tab,
   TabList,
   TabPanel,
@@ -65,7 +67,6 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
         <Tabs variant="custom" pt={4}>
           <TabList>
             <Tab>Signatures</Tab>
-            <Tab>Contacts</Tab>
             <Tab>Settings</Tab>
           </TabList>
           <TabPanels>
@@ -92,10 +93,14 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
             </TabPanel>
 
             <TabPanel px={{ md: 0 }} py={4}>
-              You have no contacts
-            </TabPanel>
+              <Heading as="h3" size="md" mb={4}>
+                Change information
+              </Heading>
+              <Text>No fields available yet. Keep an eye out ;)</Text>
 
-            <TabPanel px={{ md: 0 }} py={4}>
+              <Heading as="h3" size="md" my={4}>
+                Danger zone
+              </Heading>
               <DeleteButton
                 isLoading={isLoadingDelete}
                 onDelete={handleDelete}
