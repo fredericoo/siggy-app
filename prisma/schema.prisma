@@ -31,7 +31,7 @@ model TemplateParameter {
   title     String
   handlebar     String
   isRequired     Boolean
-  isCompanyParameter     Boolean
+  isCompanyParameter     Boolean?
   template   Template? @relation(fields: [templateId], references: [id])
   templateId Int?
   type   TemplateParameterType? @relation(fields: [typeId], references: [id])

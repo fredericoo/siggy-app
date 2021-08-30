@@ -109,7 +109,7 @@ const CreateSignatureRoute: React.VFC<CreateSignatureRouteProps> = ({
             <Text>or</Text>
 
             <Link href={`/company/${company.slug}`} passHref>
-              <Button size="sm" variant="link" as="a">
+              <Button size="sm" variant="ghost" as="a">
                 Cancel
               </Button>
             </Link>
