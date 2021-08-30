@@ -1,5 +1,5 @@
 {
-  "name": "portfolio-lara",
+  "name": "siggy-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,9 @@
     "lint": "next lint",
     "prepare": "husky install",
     "test": "jest",
-    "db:push": "npx prisma db push",
-    "db:studio": "npx prisma studio",
-    "db:generate": "npx prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
