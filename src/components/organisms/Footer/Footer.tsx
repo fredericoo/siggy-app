@@ -1,11 +1,15 @@
-import { Container, List, ListItem } from '@chakra-ui/react';
+import { Container } from '@chakra-ui/react';
 
 const Footer: React.VFC = () => {
   return (
-    <Container py={8} maxW="container.lg">
-      <List>
-        <ListItem>Terms of Service</ListItem>
-      </List>
+    <Container
+      py={8}
+      maxW="container.lg"
+      fontSize="sm"
+      textAlign="center"
+      color="gray.400"
+    >
+      Designed by Lara Luz & developed by @fredericoo
     </Container>
   );
 };
