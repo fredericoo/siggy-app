@@ -39,8 +39,8 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
     return <Message heading="Could not load parameters" />;
   return (
     <ActionSheet>
-      <Heading as="h2" size="md">
-        Parameters
+      <Heading as="h2" size="md" mb={4}>
+        Customise your signature
       </Heading>
       <VStack as="form" onSubmit={handleSubmit(onPreview)} spacing={6}>
         {parameters.map((parameter) => (
@@ -58,7 +58,7 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
             <FormErrorHelper error={errors[parameter.handlebar]} />
           </FormControl>
         ))}
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="secondary">
           Preview
         </Button>
       </VStack>
