@@ -1,27 +1,45 @@
+import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
+import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
-import { Box, Container } from '@chakra-ui/react';
+import { TemplateParametersResponse } from '@/pages/api/template/[templateId]/parameters';
+import { Container, SimpleGrid } from '@chakra-ui/react';
 import { Company, Signature, Template } from '@prisma/client';
+import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
+import { useState } from 'react';
+import useSWR from 'swr';
 
 type SignatureDetailsProps = {
   signature: Signature & { template: Template };
   company: Company;
 };
 
+const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
+
 const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   signature,
   company,
 }) => {
+  const { data: parameters, error } = useSWR<TemplateParametersResponse>(
+    `/api/template/${signature.template.id}/parameters`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+    }
+  );
+  const [previewParameters, setPreviewParameters] = useState<
+    Record<string, string>
+  >({});
   if (!signature) return <UnauthorisedMessage />;
 
   const html = parseHandlebars(
     signature.template.html,
-    generateMockParameters(company.domain || 'siggy.io')
+    previewParameters || generateMockParameters(company.domain || 'siggy.io')
   );
 
   return (
@@ -33,13 +51,15 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
           { label: company.title, href: `/company/${company.slug}` },
         ]}
       />
-      <Container maxW="container.lg" py={4}>
-        <Box
-          minW="600px"
-          dangerouslySetInnerHTML={{
-            __html: html,
-          }}
-        />
+      <Container maxW="container.xl" py={4}>
+        <SimpleGrid minChildWidth="400px" gap={8}>
+          <SignaturePreview html={html} />
+          <ParametersForm
+            parameters={parameters}
+            isLoading={!parameters && !error}
+            onPreview={setPreviewParameters}
+          />
+        </SimpleGrid>
       </Container>
     </>
   );
