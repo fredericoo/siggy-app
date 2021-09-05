@@ -6,6 +6,7 @@ const handle: NextApiHandler = async (_, res) => {
   const templates = await prisma.template.findMany();
 
   if (templates) {
+    res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate');
     return res
       .status(200)
       .json(templates.sort((a, b) => a.minPrice - b.minPrice));
