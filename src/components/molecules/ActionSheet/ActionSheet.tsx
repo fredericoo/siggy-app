@@ -13,7 +13,7 @@ const ActionSheet: ComponentWithAs<'div', ActionSheetProps & ContainerProps> =
   ({ children, footer, ...props }) => {
     return (
       <Container
-        maxW="container.md"
+        maxW="container.lg"
         pt={4}
         pb={footer ? 0 : 4}
         bg="white"
