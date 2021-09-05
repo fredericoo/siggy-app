@@ -7,6 +7,7 @@ import PlanCard, {
 } from '@/components/molecules/PlanCard/PlanCard';
 import PageHeader from '@/components/organisms/PageHeader';
 import useUserSession from '@/lib/useUserSession';
+import { Plan } from '@/types/plan';
 import {
   Text,
   Button,
@@ -20,11 +21,9 @@ import {
   InputLeftAddon,
   SimpleGrid,
   VStack,
-  Center,
   useToast,
   Box,
 } from '@chakra-ui/react';
-import { Plan } from '@prisma/client';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
 import Link from 'next/link';
@@ -39,7 +38,7 @@ type FormInputs = {
   title: string;
   slug: string;
   domain: string;
-  planId: number;
+  priceId: string;
 };
 
 const toSlug = (str: string) =>
@@ -57,7 +56,7 @@ const CreateCompanyRoute: React.VFC = () => {
     watch,
     formState: { errors },
   } = useForm<FormInputs>();
-  const [planId, title] = watch(['planId', 'title']);
+  const [priceId, title] = watch(['priceId', 'title']);
 
   useEffect(() => {
     setValue('slug', toSlug(title));
@@ -146,6 +145,7 @@ const CreateCompanyRoute: React.VFC = () => {
                     display="inline-block"
                     variant="unstyled"
                     type="text"
+                    _focus={{ bg: 'gray.100' }}
                     {...register('slug', {
                       required: true,
                       validate: (str) => str === toSlug(str),
@@ -173,8 +173,8 @@ const CreateCompanyRoute: React.VFC = () => {
           </FormControl>
 
           <Plans
-            onSelect={(planId: number) => setValue('planId', planId)}
-            selectedId={planId}
+            onSelect={(priceId: string) => setValue('priceId', priceId)}
+            selectedId={priceId}
             register={register}
           />
         </VStack>
@@ -185,7 +185,7 @@ const CreateCompanyRoute: React.VFC = () => {
 
 type PlansProps = {
   onSelect: PlanCardProps['onSelect'];
-  selectedId?: number;
+  selectedId?: string;
   register: UseFormRegister<FormInputs>;
 };
 
@@ -209,10 +209,10 @@ const Plans: React.VFC<PlansProps> = ({ onSelect, selectedId, register }) => {
 
   if (!plans)
     return (
-      <Center h="128px">
+      <VStack minH="128px">
         <Spinner />
         <Text fontSize="sm">Loading plans</Text>
-      </Center>
+      </VStack>
     );
 
   return (
@@ -222,9 +222,9 @@ const Plans: React.VFC<PlansProps> = ({ onSelect, selectedId, register }) => {
         {plans?.data?.map((plan) => (
           <PlanCard
             {...register}
-            key={plan.id}
+            key={plan.price.id}
             plan={plan}
-            isSelected={plan.id === selectedId}
+            isSelected={plan.price.id === selectedId}
             onSelect={onSelect}
           />
         ))}

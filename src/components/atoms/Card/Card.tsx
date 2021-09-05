@@ -5,11 +5,38 @@ type CardProps = {
   isSelected?: boolean;
 };
 
+const styles = {
+  default: {
+    bg: 'white',
+    _hover: { bg: 'gray.50' },
+    _active: { bg: 'orange.100' },
+    borderColor: 'gray.200',
+  },
+  selected: {
+    bg: 'orange.100',
+    borderColor: 'orange.200',
+    _hover: { bg: 'orange.100' },
+  },
+  disabled: {
+    bg: 'gray.100',
+    borderColor: 'gray.200',
+    opacity: 0.5,
+    cursor: 'initial',
+  },
+};
+
 const Card: ComponentWithAs<'div', StackProps & CardProps> = ({
   children,
   isSelected,
+  isDisabled,
   ...props
 }) => {
+  const stateStyles = isDisabled
+    ? styles.disabled
+    : isSelected
+    ? styles.selected
+    : styles.default;
+
   return (
     <VStack
       as="button"
@@ -17,11 +44,8 @@ const Card: ComponentWithAs<'div', StackProps & CardProps> = ({
       borderRadius="xl"
       p={4}
       border="1px solid"
-      borderColor={isSelected ? 'orange.200' : 'gray.200'}
-      _hover={{ bg: isSelected ? 'orange.100' : 'gray.50' }}
-      _active={{ bg: 'orange.100' }}
-      bg={isSelected ? 'orange.50' : 'white'}
       cursor="pointer"
+      {...stateStyles}
       {...props}
     >
       {children}

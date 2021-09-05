@@ -1,5 +1,5 @@
-import { Box, keyframes } from '@chakra-ui/react'
-import LoadingIcon from './LoadingIcon'
+import { Box, keyframes } from '@chakra-ui/react';
+import LoadingIcon from './LoadingIcon';
 
 const spin = keyframes({
   '0%': {
@@ -8,21 +8,16 @@ const spin = keyframes({
   '100%': {
     transform: 'rotate(360deg)',
   },
-})
+});
 
 const Spinner: React.VFC = () => {
   return (
-    <Box
-      w="16"
-      h="16"
-      animation={`${spin} 1s linear infinite`}
-      color="gray.600"
-    >
+    <Box w="8" h="8" animation={`${spin} 1s linear infinite`} color="gray.600">
       <LoadingIcon />
     </Box>
-  )
-}
+  );
+};
 
-Spinner.displayName = 'Spinner'
+Spinner.displayName = 'Spinner';
 
-export default Spinner
+export default Spinner;

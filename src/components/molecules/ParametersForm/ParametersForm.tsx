@@ -1,4 +1,3 @@
-import Spinner from '@/components/atoms/Spinner';
 import { TemplateParametersResponse } from '@/pages/api/template/[templateId]/parameters';
 import {
   Button,
@@ -14,18 +13,15 @@ import {
 import { useForm } from 'react-hook-form';
 import ActionSheet from '../ActionSheet/ActionSheet';
 import FormErrorHelper from '../FormErrorHelper/FormErrorHelper';
-import Message from '../Message';
 
 type ParametersFormProps = {
   domain?: string;
   parameters?: TemplateParametersResponse;
-  isLoading?: boolean;
   onPreview: (formData: Record<string, string>) => void;
 };
 
 const ParametersForm: React.VFC<ParametersFormProps> = ({
   parameters,
-  isLoading,
   domain,
   onPreview,
 }) => {
@@ -34,16 +30,13 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
     handleSubmit,
     formState: { errors },
   } = useForm();
-  if (isLoading) return <Spinner />;
-  if (!parameters || !parameters.length)
-    return <Message heading="Could not load parameters" />;
   return (
     <ActionSheet>
       <Heading as="h2" size="md" mb={4}>
         Customise your signature
       </Heading>
       <VStack as="form" onSubmit={handleSubmit(onPreview)} spacing={6}>
-        {parameters.map((parameter) => (
+        {parameters?.map((parameter) => (
           <FormControl
             key={parameter.id}
             isRequired={parameter.isRequired}
