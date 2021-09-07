@@ -4,6 +4,7 @@ import { FieldError } from 'react-hook-form';
 const errorMessages = {
   validate: 'The pattern does not match the required format.',
   required: 'This field is required.',
+  notUnique: 'This URL is not unique.',
 };
 
 type FormErrorHelperProps = {
