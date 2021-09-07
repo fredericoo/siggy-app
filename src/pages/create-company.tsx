@@ -29,8 +29,9 @@ import { useRouter } from 'next/dist/client/router';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useForm, UseFormRegister } from 'react-hook-form';
-import slugify from 'slugify';
 import useSWR from 'swr';
+import debounce from '@/lib/debounce';
+import { toSlug, validateSlug } from '@/lib/slug';
 
 const fetcher = async () => axios.get<Plan[]>('/api/plans');
 
@@ -40,9 +41,6 @@ type FormInputs = {
   domain: string;
   priceId: string;
 };
-
-const toSlug = (str: string) =>
-  slugify(str || '', { lower: true, strict: true });
 
 const CreateCompanyRoute: React.VFC = () => {
   useUserSession();
@@ -56,11 +54,27 @@ const CreateCompanyRoute: React.VFC = () => {
     watch,
     formState: { errors },
   } = useForm<FormInputs>();
-  const [priceId, title] = watch(['priceId', 'title']);
+  const [priceId, title, slug] = watch(['priceId', 'title', 'slug']);
 
   useEffect(() => {
     setValue('slug', toSlug(title));
   }, [setValue, title]);
+
+  const [isUniqueSlug, setIsUniqueSlug] = useState(true);
+  const checkSlug = async () => {
+    setIsUniqueSlug(true);
+    if (!validateSlug(slug)) return;
+    try {
+      const response = await axios.post('/api/unique-slug', {
+        slug,
+      });
+      setIsUniqueSlug(response.data.isUnique === true);
+    } catch {
+      setIsUniqueSlug(false);
+    }
+  };
+
+  const debouncedSlugCheck = debounce(checkSlug, 300);
 
   const toast = useToast();
 
@@ -82,7 +96,7 @@ const CreateCompanyRoute: React.VFC = () => {
     } catch (error) {
       toast({
         title: 'Oops',
-        description: 'An unexpected rror occurred.',
+        description: 'An unexpected error occurred.',
         status: 'error',
         duration: 3000,
       });
@@ -131,7 +145,7 @@ const CreateCompanyRoute: React.VFC = () => {
               <Input type="text" {...register('title', { required: true })} />
               <FormErrorHelper error={errors.title} />
             </FormControl>
-            <FormControl id="slug" isInvalid={!!errors.slug}>
+            <FormControl id="slug" isInvalid={!!errors.slug || !isUniqueSlug}>
               <FormHelperText>
                 <Box display="flex">
                   <Text
@@ -140,7 +154,7 @@ const CreateCompanyRoute: React.VFC = () => {
                   >{`https://siggy.io/company/`}</Text>
                   <Input
                     borderRadius="none"
-                    bg={errors.slug ? 'red.100' : 'inherit'}
+                    bg={errors.slug || !isUniqueSlug ? 'red.100' : 'inherit'}
                     fontSize="inherit"
                     display="inline-block"
                     variant="unstyled"
@@ -148,11 +162,18 @@ const CreateCompanyRoute: React.VFC = () => {
                     _focus={{ bg: 'gray.100' }}
                     {...register('slug', {
                       required: true,
-                      validate: (str) => str === toSlug(str),
+                      validate: validateSlug,
                     })}
+                    onBlur={debouncedSlugCheck}
                   />
                 </Box>
-                <FormErrorHelper error={errors.slug} />
+                <FormErrorHelper
+                  error={
+                    !isUniqueSlug && !errors.slug
+                      ? { type: 'notUnique' }
+                      : errors.slug
+                  }
+                />
               </FormHelperText>
             </FormControl>
           </Box>
