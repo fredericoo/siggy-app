@@ -24,10 +24,13 @@ import PageHeader from '@/components/organisms/PageHeader';
 import ActionSheet from '@/components/molecules/ActionSheet/ActionSheet';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
+import stripe from '@/lib/stripe';
+import useSWR from 'swr';
+import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent';
 
 type CreateSignatureRouteProps = {
   company: Company;
-  templates: Template[];
+  priceThreshold: number;
 };
 
 type FormInputs = {
@@ -35,9 +38,14 @@ type FormInputs = {
   templateId: number;
 };
 
+const fetcher = async () => {
+  const companies = await axios.get<Template[]>('/api/templates');
+  return companies.data;
+};
+
 const CreateSignatureRoute: React.VFC<CreateSignatureRouteProps> = ({
   company,
-  templates,
+  priceThreshold,
 }) => {
   const {
     register,
@@ -47,6 +55,10 @@ const CreateSignatureRoute: React.VFC<CreateSignatureRouteProps> = ({
   } = useForm<FormInputs>();
   const [isLoading, setIsLoading] = useState(false);
   const { push } = useRouter();
+  const { data: templates, error } = useSWR<Template[]>(
+    '/api/templates',
+    fetcher
+  );
   const { getRootProps, getRadioProps } = useRadioGroup({
     name: 'templateId',
     defaultValue: 0,
@@ -76,7 +88,7 @@ const CreateSignatureRoute: React.VFC<CreateSignatureRouteProps> = ({
     } catch (error) {
       toast({
         title: 'Oops',
-        description: 'An unexpected rror occurred.',
+        description: 'An unexpected error occurred.',
         status: 'error',
         duration: 3000,
       });
@@ -138,19 +150,22 @@ const CreateSignatureRoute: React.VFC<CreateSignatureRouteProps> = ({
             Select a template
           </Heading>
 
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} {...group}>
-            {templates.map((template) => {
-              const radio = getRadioProps({ value: template.id.toString() });
-              return (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  domain={company.domain || 'siggy.io'}
-                  {...radio}
-                />
-              );
-            })}
-          </SimpleGrid>
+          <DynamicContent isLoading={!error && !templates} isError={error}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} {...group}>
+              {templates?.map((template) => {
+                const radio = getRadioProps({ value: template.id.toString() });
+                return (
+                  <TemplateCard
+                    isDisabled={template.minPrice > priceThreshold}
+                    key={template.id}
+                    template={template}
+                    domain={company.domain || 'siggy.io'}
+                    {...radio}
+                  />
+                );
+              })}
+            </SimpleGrid>
+          </DynamicContent>
         </VStack>
       </ActionSheet>
     </>
@@ -162,7 +177,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   req,
 }) => {
   const session = await getSession({ req });
-  if (!session || !params?.slug) return { props: { signature: null } };
+  if (!session || !params?.slug) return { props: {} };
 
   try {
     const userCompanies = session?.id
@@ -172,27 +187,22 @@ export const getServerSideProps: GetServerSideProps = async ({
             select: { companies: true },
           })
           .companies({
-            select: { title: true, slug: true, planId: true, domain: true },
+            select: { title: true, slug: true, priceId: true, domain: true },
           })
       : [];
     const company =
       userCompanies.find((company) => company.slug === params?.slug) || null;
 
-    const templates = await prisma.template.findMany({
-      where: {
-        planId: company?.planId || 0,
-      },
-    });
+    const priceThreshold = company
+      ? (await (await stripe.prices.retrieve(company.priceId)).unit_amount) || 0
+      : 0;
 
     return {
-      props: { company, templates },
+      props: { company, priceThreshold },
     };
   } catch {
     return {
-      props: {
-        company: null,
-        templates: [],
-      },
+      props: {},
     };
   }
 };

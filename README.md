@@ -53,3 +53,9 @@ To setup a postgresSQL database locally, run the following:
 
 If you made any changes to `/prisma/schema.prisma`, you can migrate the database with `yarn db:migrate`.
 Append `--name NAME` to the command to specify a name for the migration.
+
+## Products and payment
+
+Plans come straight from Stripe's Products and Prices. Simply create recurrent products on your Stripe account and they will show up when creating a new company.
+
+In order to setup, add your stripe secret key to `.env.local` under the name `STRIPE_SECRET`

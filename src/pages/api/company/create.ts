@@ -3,7 +3,7 @@ import { getSession } from 'next-auth/client';
 import prisma from '@/lib/prisma';
 
 const handle: NextApiHandler = async (req, res) => {
-  const { title, domain, slug, planId } = req.body;
+  const { title, domain, slug, priceId } = req.body;
 
   const session = await getSession({ req });
   if (!session) {
@@ -29,7 +29,7 @@ const handle: NextApiHandler = async (req, res) => {
       title,
       domain,
       slug,
-      plan: { connect: { id: planId } },
+      priceId,
       admin: { connect: { id: session?.id } },
     },
   });

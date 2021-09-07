@@ -13,9 +13,10 @@ type TemplateCardProps = {
 const TemplateCard: React.VFC<TemplateCardProps> = ({
   template,
   domain,
+  isChecked,
   ...props
 }) => {
-  const { getInputProps, getCheckboxProps } = useRadio(props);
+  const { getInputProps, getCheckboxProps } = useRadio({ ...props, isChecked });
   const input = getInputProps();
   const checkbox = getCheckboxProps();
 
@@ -25,7 +26,7 @@ const TemplateCard: React.VFC<TemplateCardProps> = ({
   );
 
   return (
-    <Card isSelected={props.isChecked} as="label">
+    <Card isSelected={isChecked} as="label" {...props}>
       <input {...input} />
       <Box
         _checked={{

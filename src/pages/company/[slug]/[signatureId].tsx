@@ -1,3 +1,4 @@
+import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent';
 import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
@@ -54,11 +55,12 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       <Container maxW="container.xl" py={4}>
         <SimpleGrid minChildWidth="400px" gap={8}>
           <SignaturePreview html={html} />
-          <ParametersForm
-            parameters={parameters}
-            isLoading={!parameters && !error}
-            onPreview={setPreviewParameters}
-          />
+          <DynamicContent isError={error} isLoading={!parameters && !error}>
+            <ParametersForm
+              parameters={parameters}
+              onPreview={setPreviewParameters}
+            />
+          </DynamicContent>
         </SimpleGrid>
       </Container>
     </>
