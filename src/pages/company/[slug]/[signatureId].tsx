@@ -3,17 +3,30 @@ import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
+import ActionSheet from '@/components/molecules/ActionSheet';
 import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
 import { TemplateParametersResponse } from '@/pages/api/template/[templateId]/parameters';
-import { Container, SimpleGrid } from '@chakra-ui/react';
+import {
+  Container,
+  SimpleGrid,
+  Tab,
+  Tabs,
+  TabPanels,
+  TabPanel,
+  TabList,
+  Text,
+  Switch,
+} from '@chakra-ui/react';
 import { Company, Signature, Template } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
+import DeleteButton from '@/components/molecules/DeleteButton';
+import { useRouter } from 'next/dist/client/router';
 
 type SignatureDetailsProps = {
   signature: Signature & { template: Template };
@@ -26,6 +39,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   signature,
   company,
 }) => {
+  const { push } = useRouter();
   const { data: parameters, error } = useSWR<TemplateParametersResponse>(
     `/api/template/${signature.template.id}/parameters`,
     fetcher,
@@ -36,6 +50,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   const [previewParameters, setPreviewParameters] = useState<
     Record<string, string>
   >({});
+  const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const mockParameters = useMemo(
     () => generateMockParameters(company.domain || 'siggy.io'),
     [company.domain]
@@ -46,6 +61,23 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
     if (typeof cur === 'string' && cur.length > 0) return acc + 1;
     return acc;
   }, 0);
+  const companyParameters = parameters?.filter(
+    (param) => param.isCompanyParameter
+  );
+
+  const handleDelete = async () => {
+    setIsLoadingDelete(true);
+    try {
+      const request = await axios.post(`/api/signature/${signature.id}/delete`);
+      if (request.status === 200) {
+        push(`/company/${company.slug}`);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    setIsLoadingDelete(false);
+  };
+
   return (
     <>
       <PageHeader
@@ -56,19 +88,63 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
         ]}
       />
       <Container maxW="container.xl" py={4}>
-        <SimpleGrid minChildWidth="400px" gap={8}>
+        <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
           <SignaturePreview
             html={parseHandlebars(
               signature.template.html,
               hasParameters ? previewParameters : mockParameters
             )}
           />
-          <DynamicContent isError={error} isLoading={!parameters && !error}>
-            <ParametersForm
-              parameters={parameters}
-              onPreview={setPreviewParameters}
-            />
-          </DynamicContent>
+          <Tabs>
+            <TabList>
+              <Tab>Member</Tab>
+              {!!companyParameters?.length && <Tab>Company</Tab>}
+              <Tab>Settings</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel px={0}>
+                <DynamicContent
+                  isError={error}
+                  isLoading={!parameters && !error}
+                >
+                  <ParametersForm
+                    parameters={parameters?.filter(
+                      (param) => !param.isCompanyParameter
+                    )}
+                    onPreview={setPreviewParameters}
+                  />
+                </DynamicContent>
+              </TabPanel>
+              {!!companyParameters?.length && (
+                <TabPanel px={0}>
+                  <DynamicContent
+                    isError={error}
+                    isLoading={!parameters && !error}
+                  >
+                    <ParametersForm
+                      parameters={companyParameters}
+                      onPreview={setPreviewParameters}
+                    />
+                  </DynamicContent>
+                </TabPanel>
+              )}
+              <TabPanel px={0}>
+                <ActionSheet>
+                  <SimpleGrid columns={2} rowGap={4} alignItems="center">
+                    <Text>Public Signature</Text>
+                    <Switch justifySelf="end" value={1} />
+                    <Text>Danger zone</Text>
+                    <DeleteButton
+                      isLoading={isLoadingDelete}
+                      onDelete={handleDelete}
+                    >
+                      Delete Signature
+                    </DeleteButton>
+                  </SimpleGrid>
+                </ActionSheet>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
         </SimpleGrid>
       </Container>
     </>
