@@ -71,7 +71,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
       />
 
       <Container maxW="container.lg">
-        <Tabs variant="custom" pt={4}>
+        <Tabs pt={4}>
           <TabList>
             <Tab>Signatures</Tab>
             <Tab>Settings</Tab>

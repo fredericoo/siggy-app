@@ -3,12 +3,11 @@ import {
   Button,
   FormControl,
   FormLabel,
-  Heading,
   Input,
   InputGroup,
-  InputProps,
   InputRightAddon,
   VStack,
+  InputProps,
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import ActionSheet from '../ActionSheet/ActionSheet';
@@ -32,9 +31,6 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
   } = useForm();
   return (
     <ActionSheet>
-      <Heading as="h2" size="md" mb={4}>
-        Customise your signature
-      </Heading>
       <VStack as="form" onSubmit={handleSubmit(onPreview)} spacing={6}>
         {parameters?.map((parameter) => (
           <FormControl

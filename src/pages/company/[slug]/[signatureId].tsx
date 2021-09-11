@@ -2,32 +2,41 @@ import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent
 import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
+import SignatureSettings from '@/components/organisms/SignatureSettings';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
 import { TemplateParametersResponse } from '@/pages/api/template/[templateId]/parameters';
-import { Container, SimpleGrid } from '@chakra-ui/react';
-import { Company, Signature, Template } from '@prisma/client';
+import {
+  Container,
+  SimpleGrid,
+  Tab,
+  Tabs,
+  TabPanels,
+  TabPanel,
+  TabList,
+} from '@chakra-ui/react';
+import { Signature, Template, Company } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 
 type SignatureDetailsProps = {
-  signature: Signature & { template: Template };
-  company: Company;
+  signature: Signature & { template: Template } & { company: Company };
+  isAdmin?: boolean;
 };
 
 const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
 
 const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   signature,
-  company,
+  isAdmin,
 }) => {
   const { data: parameters, error } = useSWR<TemplateParametersResponse>(
-    `/api/template/${signature.template.id}/parameters`,
+    `/api/template/${signature?.template?.id}/parameters`,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -36,31 +45,88 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   const [previewParameters, setPreviewParameters] = useState<
     Record<string, string>
   >({});
+
+  const mockParameters = useMemo(
+    () => generateMockParameters(signature?.company?.domain || 'siggy.app'),
+    [signature]
+  );
   if (!signature) return <UnauthorisedMessage />;
 
-  const html = parseHandlebars(
-    signature.template.html,
-    previewParameters || generateMockParameters(company.domain || 'siggy.io')
+  const hasParameters = Object.values(previewParameters).reduce((acc, cur) => {
+    if (typeof cur === 'string' && cur.length > 0) return acc + 1;
+    return acc;
+  }, 0);
+  const companyParameters = parameters?.filter(
+    (param) => param.isCompanyParameter
   );
 
   return (
     <>
       <PageHeader
         title={signature.title}
-        breadcrumbs={[
-          { label: 'Companies', href: '/companies' },
-          { label: company.title, href: `/company/${company.slug}` },
-        ]}
+        breadcrumbs={
+          isAdmin && [
+            { label: 'Companies', href: '/companies' },
+            {
+              label: signature?.company?.title,
+              href: `/company/${signature?.company?.slug}`,
+            },
+          ]
+        }
       />
       <Container maxW="container.xl" py={4}>
-        <SimpleGrid minChildWidth="400px" gap={8}>
-          <SignaturePreview html={html} />
-          <DynamicContent isError={error} isLoading={!parameters && !error}>
-            <ParametersForm
-              parameters={parameters}
-              onPreview={setPreviewParameters}
-            />
-          </DynamicContent>
+        <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
+          <SignaturePreview
+            html={parseHandlebars(
+              signature.template.html,
+              hasParameters ? previewParameters : mockParameters
+            )}
+          />
+          <Tabs isLazy>
+            {isAdmin && (
+              <TabList>
+                <Tab>Member</Tab>
+                {!!companyParameters?.length && <Tab>Company</Tab>}
+                {<Tab>Settings</Tab>}
+              </TabList>
+            )}
+            <TabPanels>
+              <TabPanel px={0}>
+                <DynamicContent
+                  isError={error}
+                  isLoading={!parameters && !error}
+                >
+                  <ParametersForm
+                    parameters={parameters?.filter(
+                      (param) => !param.isCompanyParameter
+                    )}
+                    onPreview={setPreviewParameters}
+                  />
+                </DynamicContent>
+              </TabPanel>
+              {isAdmin && !!companyParameters?.length && (
+                <TabPanel px={0}>
+                  <DynamicContent
+                    isError={error}
+                    isLoading={!parameters && !error}
+                  >
+                    <ParametersForm
+                      parameters={companyParameters}
+                      onPreview={setPreviewParameters}
+                    />
+                  </DynamicContent>
+                </TabPanel>
+              )}
+              {isAdmin && (
+                <TabPanel px={0}>
+                  <SignatureSettings
+                    signatureId={signature.id}
+                    companySlug={signature.company.slug}
+                  />
+                </TabPanel>
+              )}
+            </TabPanels>
+          </Tabs>
         </SimpleGrid>
       </Container>
     </>
@@ -71,43 +137,51 @@ export const getServerSideProps: GetServerSideProps = async ({
   params,
   req,
 }) => {
-  const session = await getSession({ req });
-  if (!session || !params?.signatureId)
-    return { props: { signature: null, company: null } };
+  if (
+    typeof params?.signatureId !== 'string' ||
+    typeof params?.slug !== 'string'
+  )
+    return { props: { signature: null } };
   try {
-    const userCompanies = session?.id
+    const signature = await prisma.signature.findFirst({
+      where: { id: params.signatureId, companySlug: params.slug },
+      select: {
+        title: true,
+        template: true,
+        id: true,
+        isPublic: true,
+        company: {
+          select: {
+            domain: true,
+            slug: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    const session = await getSession({ req });
+
+    const userMatchingCompanies = session?.id
       ? await prisma.user
           .findUnique({
             where: { id: session?.id },
-            select: { companies: true },
           })
           .companies({
-            select: {
-              slug: true,
-              title: true,
-              signatures: { select: { title: true, template: true, id: true } },
-            },
+            where: { slug: params.slug },
           })
       : [];
-    const company = userCompanies.find(
-      (company) => company.slug === params?.slug
-    );
 
-    if (!company) return { props: { signature: null, company: null } };
-
-    const signature =
-      company?.signatures.find(
-        (signature) => signature.id === params.signatureId
-      ) || null;
+    if (!userMatchingCompanies.length && signature?.isPublic !== true)
+      return { props: { signature: null } };
 
     return {
-      props: { signature, company },
+      props: { signature, isAdmin: !!userMatchingCompanies.length },
     };
   } catch {
     return {
       props: {
         signature: null,
-        company: null,
       },
     };
   }

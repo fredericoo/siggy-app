@@ -6,7 +6,7 @@ import { ReactNode } from 'react';
 
 type PageHeaderProps = {
   title: string;
-  breadcrumbs?: Breadcrumb[];
+  breadcrumbs?: Breadcrumb[] | false;
   tools?: ReactNode;
 };
 
