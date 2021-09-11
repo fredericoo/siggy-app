@@ -12,7 +12,7 @@ import { Company, Signature, Template } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 
 type SignatureDetailsProps = {
@@ -36,13 +36,16 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   const [previewParameters, setPreviewParameters] = useState<
     Record<string, string>
   >({});
+  const mockParameters = useMemo(
+    () => generateMockParameters(company.domain || 'siggy.io'),
+    [company.domain]
+  );
   if (!signature) return <UnauthorisedMessage />;
 
-  const html = parseHandlebars(
-    signature.template.html,
-    previewParameters || generateMockParameters(company.domain || 'siggy.io')
-  );
-
+  const hasParameters = Object.values(previewParameters).reduce((acc, cur) => {
+    if (typeof cur === 'string' && cur.length > 0) return acc + 1;
+    return acc;
+  }, 0);
   return (
     <>
       <PageHeader
@@ -54,7 +57,12 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       />
       <Container maxW="container.xl" py={4}>
         <SimpleGrid minChildWidth="400px" gap={8}>
-          <SignaturePreview html={html} />
+          <SignaturePreview
+            html={parseHandlebars(
+              signature.template.html,
+              hasParameters ? previewParameters : mockParameters
+            )}
+          />
           <DynamicContent isError={error} isLoading={!parameters && !error}>
             <ParametersForm
               parameters={parameters}
