@@ -1,5 +1,7 @@
+import ActionSheet from '@/components/molecules/ActionSheet/ActionSheet';
 import DeleteButton from '@/components/molecules/DeleteButton/DeleteButton';
 import SignatureCard from '@/components/molecules/SignatureCard';
+import SubscriptionStatus from '@/components/molecules/SubscriptionStatus/SubscriptionStatus';
 import PageHeader from '@/components/organisms/PageHeader';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import prisma from '@/lib/prisma';
@@ -23,7 +25,7 @@ import { useRouter } from 'next/dist/client/router';
 import Link from 'next/link';
 import { useState } from 'react';
 import useSWR from 'swr';
-import { SignaturesQueryResponse } from '../api/company/signatures';
+import { SignaturesQueryResponse } from '../api/company/[slug]/signatures';
 
 type CompanyDetailsProps = {
   company: Company;
@@ -35,7 +37,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   const { push } = useRouter();
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const { data: signatures } = useSWR<SignaturesQueryResponse>(
-    `/api/company/signatures?companySlug=${company?.slug}`,
+    `/api/company/${company?.slug}/signatures`,
     fetcher
   );
 
@@ -44,9 +46,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   const handleDelete = async () => {
     setIsLoadingDelete(true);
     try {
-      const request = await axios.post(`/api/company/delete`, {
-        slug: company.slug,
-      });
+      const request = await axios.post(`/api/company/${company.slug}/delete`);
       if (request.status === 200) {
         push('/companies');
       }
@@ -61,6 +61,13 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
       <PageHeader
         title={company.title}
         breadcrumbs={[{ label: 'Companies', href: '/companies' }]}
+        tools={
+          <SubscriptionStatus
+            align="initial"
+            w={{ md: '200px' }}
+            companySlug={company.slug}
+          />
+        }
       />
 
       <Container maxW="container.lg">
@@ -92,7 +99,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
               </SimpleGrid>
             </TabPanel>
 
-            <TabPanel px={{ md: 0 }} py={4}>
+            <TabPanel p={4} as={ActionSheet} mt={4}>
               <Heading as="h3" size="md" mb={4}>
                 Change information
               </Heading>

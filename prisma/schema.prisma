@@ -52,6 +52,8 @@ model Company {
   title     String
   domain    String?
   priceId   String
+  subscriptionId  String?
+  sessionId  String?
   admin     User?   @relation(fields: [adminId], references: [id])
   adminId   Int
   signatures  Signature[]

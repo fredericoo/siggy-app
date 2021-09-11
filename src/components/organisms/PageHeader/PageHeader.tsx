@@ -1,19 +1,30 @@
 import Breadcrumbs, {
   Breadcrumb,
 } from '@/components/molecules/Breadcrumbs/Breadcrumbs';
-import { Box, Container, Heading } from '@chakra-ui/react';
+import { Box, Container, Heading, Stack } from '@chakra-ui/react';
+import { ReactNode } from 'react';
 
 type PageHeaderProps = {
   title: string;
   breadcrumbs?: Breadcrumb[];
+  tools?: ReactNode;
 };
 
-const PageHeader: React.VFC<PageHeaderProps> = ({ title, breadcrumbs }) => {
+const PageHeader: React.VFC<PageHeaderProps> = ({
+  title,
+  breadcrumbs,
+  tools,
+}) => {
   return (
     <Box>
       <Container maxW="container.lg" py={8}>
         {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
-        <Heading as="h1">{title}</Heading>
+        <Stack direction={{ base: 'column', md: 'row' }} spacing={8}>
+          <Heading as="h1" flexGrow={1}>
+            {title}
+          </Heading>
+          {tools}
+        </Stack>
       </Container>
     </Box>
   );
