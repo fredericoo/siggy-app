@@ -6,6 +6,8 @@ import stripe from '@/lib/stripe';
 const handle: NextApiHandler = async (req, res) => {
   const { title, domain, slug, priceId } = req.body;
 
+  const host = req.headers.host || 'localhost:3000';
+
   const session = await getSession({ req });
   if (!session) {
     res.json({
@@ -26,8 +28,8 @@ const handle: NextApiHandler = async (req, res) => {
   }
 
   const stripeSession = await stripe.checkout.sessions.create({
-    success_url: `http://localhost:3000/company/${slug}`,
-    cancel_url: `http://localhost:3000/company/${slug}`,
+    success_url: `http://${host}/company/${slug}`,
+    cancel_url: `http://${host}/company/${slug}`,
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
     mode: 'subscription',
