@@ -2,8 +2,8 @@ import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent
 import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
+import SignatureSettings from '@/components/organisms/SignatureSettings';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
-import ActionSheet from '@/components/molecules/ActionSheet';
 import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
@@ -16,32 +16,27 @@ import {
   TabPanels,
   TabPanel,
   TabList,
-  Text,
-  Switch,
 } from '@chakra-ui/react';
-import { Company, Signature, Template } from '@prisma/client';
+import { Signature, Template, Company } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
-import DeleteButton from '@/components/molecules/DeleteButton';
-import { useRouter } from 'next/dist/client/router';
 
 type SignatureDetailsProps = {
-  signature: Signature & { template: Template };
-  company: Company;
+  signature: Signature & { template: Template } & { company: Company };
+  isAdmin?: boolean;
 };
 
 const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
 
 const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   signature,
-  company,
+  isAdmin,
 }) => {
-  const { push } = useRouter();
   const { data: parameters, error } = useSWR<TemplateParametersResponse>(
-    `/api/template/${signature.template.id}/parameters`,
+    `/api/template/${signature?.template?.id}/parameters`,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -50,10 +45,10 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   const [previewParameters, setPreviewParameters] = useState<
     Record<string, string>
   >({});
-  const [isLoadingDelete, setIsLoadingDelete] = useState(false);
+
   const mockParameters = useMemo(
-    () => generateMockParameters(company.domain || 'siggy.io'),
-    [company.domain]
+    () => generateMockParameters(signature?.company?.domain || 'siggy.app'),
+    [signature]
   );
   if (!signature) return <UnauthorisedMessage />;
 
@@ -65,27 +60,19 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
     (param) => param.isCompanyParameter
   );
 
-  const handleDelete = async () => {
-    setIsLoadingDelete(true);
-    try {
-      const request = await axios.post(`/api/signature/${signature.id}/delete`);
-      if (request.status === 200) {
-        push(`/company/${company.slug}`);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    setIsLoadingDelete(false);
-  };
-
   return (
     <>
       <PageHeader
         title={signature.title}
-        breadcrumbs={[
-          { label: 'Companies', href: '/companies' },
-          { label: company.title, href: `/company/${company.slug}` },
-        ]}
+        breadcrumbs={
+          isAdmin && [
+            { label: 'Companies', href: '/companies' },
+            {
+              label: signature?.company?.title,
+              href: `/company/${signature?.company?.slug}`,
+            },
+          ]
+        }
       />
       <Container maxW="container.xl" py={4}>
         <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
@@ -95,12 +82,14 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
               hasParameters ? previewParameters : mockParameters
             )}
           />
-          <Tabs>
-            <TabList>
-              <Tab>Member</Tab>
-              {!!companyParameters?.length && <Tab>Company</Tab>}
-              <Tab>Settings</Tab>
-            </TabList>
+          <Tabs isLazy>
+            {isAdmin && (
+              <TabList>
+                <Tab>Member</Tab>
+                {!!companyParameters?.length && <Tab>Company</Tab>}
+                {<Tab>Settings</Tab>}
+              </TabList>
+            )}
             <TabPanels>
               <TabPanel px={0}>
                 <DynamicContent
@@ -115,7 +104,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                   />
                 </DynamicContent>
               </TabPanel>
-              {!!companyParameters?.length && (
+              {isAdmin && !!companyParameters?.length && (
                 <TabPanel px={0}>
                   <DynamicContent
                     isError={error}
@@ -128,21 +117,14 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                   </DynamicContent>
                 </TabPanel>
               )}
-              <TabPanel px={0}>
-                <ActionSheet>
-                  <SimpleGrid columns={2} rowGap={4} alignItems="center">
-                    <Text>Public Signature</Text>
-                    <Switch justifySelf="end" value={1} />
-                    <Text>Danger zone</Text>
-                    <DeleteButton
-                      isLoading={isLoadingDelete}
-                      onDelete={handleDelete}
-                    >
-                      Delete Signature
-                    </DeleteButton>
-                  </SimpleGrid>
-                </ActionSheet>
-              </TabPanel>
+              {isAdmin && (
+                <TabPanel px={0}>
+                  <SignatureSettings
+                    signatureId={signature.id}
+                    companySlug={signature.company.slug}
+                  />
+                </TabPanel>
+              )}
             </TabPanels>
           </Tabs>
         </SimpleGrid>
@@ -155,43 +137,51 @@ export const getServerSideProps: GetServerSideProps = async ({
   params,
   req,
 }) => {
-  const session = await getSession({ req });
-  if (!session || !params?.signatureId)
-    return { props: { signature: null, company: null } };
+  if (
+    typeof params?.signatureId !== 'string' ||
+    typeof params?.slug !== 'string'
+  )
+    return { props: { signature: null } };
   try {
-    const userCompanies = session?.id
+    const signature = await prisma.signature.findFirst({
+      where: { id: params.signatureId, companySlug: params.slug },
+      select: {
+        title: true,
+        template: true,
+        id: true,
+        isPublic: true,
+        company: {
+          select: {
+            domain: true,
+            slug: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    const session = await getSession({ req });
+
+    const userMatchingCompanies = session?.id
       ? await prisma.user
           .findUnique({
             where: { id: session?.id },
-            select: { companies: true },
           })
           .companies({
-            select: {
-              slug: true,
-              title: true,
-              signatures: { select: { title: true, template: true, id: true } },
-            },
+            where: { slug: params.slug },
           })
       : [];
-    const company = userCompanies.find(
-      (company) => company.slug === params?.slug
-    );
 
-    if (!company) return { props: { signature: null, company: null } };
-
-    const signature =
-      company?.signatures.find(
-        (signature) => signature.id === params.signatureId
-      ) || null;
+    if (!userMatchingCompanies.length && signature?.isPublic !== true)
+      return { props: { signature: null } };
 
     return {
-      props: { signature, company },
+      props: { signature, isAdmin: !!userMatchingCompanies.length },
     };
   } catch {
     return {
       props: {
         signature: null,
-        company: null,
       },
     };
   }
