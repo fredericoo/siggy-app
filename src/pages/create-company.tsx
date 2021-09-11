@@ -83,7 +83,7 @@ const CreateCompanyRoute: React.VFC = () => {
     try {
       const response = await axios.post('/api/company/create', data);
       if (!response.data.error) {
-        push(`/company/${response.data.slug}`);
+        push(response.data.redirectURL);
       } else {
         toast({
           title: 'Oops',

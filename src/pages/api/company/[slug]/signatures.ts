@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { ErrorMessage } from '@/lib/types';
 import { Signature, Template } from '@prisma/client';
 import { NextApiHandler } from 'next';
 import { getSession } from 'next-auth/client';
@@ -7,17 +8,15 @@ export type SignatureResponse = Pick<Signature, 'id' | 'title'> & {
   template: Pick<Template, 'html' | 'title'>;
 };
 
-type ErrorMessage = { error: string };
-
 export type SignaturesQueryResponse = SignatureResponse[] | ErrorMessage;
 
 const handle: NextApiHandler = async (req, res) => {
-  const { companySlug } = req.query;
+  const { slug } = req.query;
 
   // If companyId is not a number, return Bad Request
-  if (typeof companySlug !== 'string') {
+  if (typeof slug !== 'string') {
     res.status(400).json({
-      error: `Invalid company: ${companySlug}`,
+      error: `Invalid company: ${slug}`,
     });
     return;
   }
@@ -36,7 +35,7 @@ const handle: NextApiHandler = async (req, res) => {
     .companies({ select: { slug: true } });
 
   // Do not allow to see a company plan if the user is not part of it
-  if (!userCompanies.find((company) => company.slug === companySlug)) {
+  if (!userCompanies.find((company) => company.slug === slug)) {
     res.status(401).json({
       error: 'User not part of the company',
     });
@@ -44,7 +43,7 @@ const handle: NextApiHandler = async (req, res) => {
   }
 
   const signatures = await prisma.signature.findMany({
-    where: { companySlug },
+    where: { companySlug: slug },
     select: {
       title: true,
       id: true,

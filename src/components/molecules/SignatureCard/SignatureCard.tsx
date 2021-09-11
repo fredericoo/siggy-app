@@ -1,5 +1,5 @@
 import Card from '@/components/atoms/Card';
-import { SignatureResponse } from '@/pages/api/company/signatures';
+import { SignatureResponse } from '@/pages/api/company/[slug]/signatures';
 import { Heading, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 
