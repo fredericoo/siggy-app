@@ -132,6 +132,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       <Container maxW="container.xl" py={4}>
         <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
           <SignaturePreview
+            isLoading={!settings}
             html={parseHandlebars(
               signature.template.html,
               hasParameters ? previewParameters : mockParameters
