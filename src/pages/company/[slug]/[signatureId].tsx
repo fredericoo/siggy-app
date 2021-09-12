@@ -75,7 +75,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
         }
       />
       <Container maxW="container.xl" py={4}>
-        <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
+        <SimpleGrid minChildWidth={{ md: '400px' }} gap={8} alignItems="start">
           <SignaturePreview
             html={parseHandlebars(
               signature.template.html,
