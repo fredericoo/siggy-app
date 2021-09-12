@@ -2,7 +2,7 @@ import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent
 import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
-import SignatureSettings from '@/components/organisms/SignatureSettings';
+import SignatureSettings from '@/components/molecules/SignatureSettings';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
@@ -21,7 +21,7 @@ import { Signature, Template, Company } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 
 type SignatureDetailsProps = {
@@ -42,6 +42,10 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       revalidateOnFocus: false,
     }
   );
+  const { data: settings } = useSWR(
+    `/api/signature/${signature?.id}/settings`,
+    fetcher
+  );
   const [previewParameters, setPreviewParameters] = useState<
     Record<string, string>
   >({});
@@ -50,15 +54,66 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
     () => generateMockParameters(signature?.company?.domain || 'siggy.app'),
     [signature]
   );
-  if (!signature) return <UnauthorisedMessage />;
 
   const hasParameters = Object.values(previewParameters).reduce((acc, cur) => {
     if (typeof cur === 'string' && cur.length > 0) return acc + 1;
     return acc;
   }, 0);
-  const companyParameters = parameters?.filter(
-    (param) => param.isCompanyParameter
+
+  const memberParameters = useMemo(
+    () => parameters?.filter((param) => !param.isCompanyParameter),
+    [parameters]
   );
+  const companyParameters = useMemo(
+    () => parameters?.filter((param) => param.isCompanyParameter),
+    [parameters]
+  );
+
+  useEffect(() => {
+    if (settings) {
+      const newSettingsJson = JSON.parse(settings?.companyParametersJson) || {};
+      const newCompanyParams =
+        companyParameters?.reduce(
+          (acc, cur) => ({ ...acc, [cur.handlebar]: '' }),
+          {}
+        ) || {};
+      const params = {
+        ...previewParameters,
+        ...newCompanyParams,
+        ...newSettingsJson,
+      };
+      setPreviewParameters(params);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyParameters, setPreviewParameters, settings]);
+
+  if (!signature) return <UnauthorisedMessage />;
+
+  const handlePreview = (formData: Record<string, string>) => {
+    const newMemberParams =
+      memberParameters?.reduce(
+        (acc, cur) => ({ ...acc, [cur.handlebar]: '' }),
+        {}
+      ) || {};
+    const params = { ...previewParameters, ...newMemberParams, ...formData };
+    setPreviewParameters(params);
+  };
+
+  const handleSave = async (formData: Record<string, string>) => {
+    const newCompanyParams =
+      companyParameters?.reduce(
+        (acc, cur) => ({ ...acc, [cur.handlebar]: '' }),
+        {}
+      ) || {};
+    const params = { ...previewParameters, ...newCompanyParams, ...formData };
+    await axios.put(`/api/signature/${signature.id}/settings`, {
+      companyParametersJson: JSON.stringify({
+        ...newCompanyParams,
+        ...formData,
+      }),
+    });
+    setPreviewParameters(params);
+  };
 
   return (
     <>
@@ -82,7 +137,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
               hasParameters ? previewParameters : mockParameters
             )}
           />
-          <Tabs isLazy>
+          <Tabs>
             {isAdmin && (
               <TabList>
                 <Tab>Member</Tab>
@@ -97,10 +152,10 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                   isLoading={!parameters && !error}
                 >
                   <ParametersForm
-                    parameters={parameters?.filter(
-                      (param) => !param.isCompanyParameter
-                    )}
-                    onPreview={setPreviewParameters}
+                    parameters={memberParameters}
+                    values={previewParameters}
+                    onAction={handlePreview}
+                    actionLabel="Preview"
                   />
                 </DynamicContent>
               </TabPanel>
@@ -110,10 +165,14 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                     isError={error}
                     isLoading={!parameters && !error}
                   >
-                    <ParametersForm
-                      parameters={companyParameters}
-                      onPreview={setPreviewParameters}
-                    />
+                    {settings && (
+                      <ParametersForm
+                        parameters={companyParameters}
+                        values={JSON.parse(settings.companyParametersJson)}
+                        onAction={handleSave}
+                        actionLabel="Save"
+                      />
+                    )}
                   </DynamicContent>
                 </TabPanel>
               )}

@@ -16,13 +16,17 @@ import FormErrorHelper from '../FormErrorHelper/FormErrorHelper';
 type ParametersFormProps = {
   domain?: string;
   parameters?: TemplateParametersResponse;
-  onPreview: (formData: Record<string, string>) => void;
+  values?: Record<string, string>;
+  onAction: (formData: Record<string, string>) => void;
+  actionLabel: string;
 };
 
 const ParametersForm: React.VFC<ParametersFormProps> = ({
   parameters,
+  values,
   domain,
-  onPreview,
+  onAction,
+  actionLabel,
 }) => {
   const {
     register,
@@ -31,7 +35,7 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
   } = useForm();
   return (
     <ActionSheet>
-      <VStack as="form" onSubmit={handleSubmit(onPreview)} spacing={6}>
+      <VStack as="form" onSubmit={handleSubmit(onAction)} spacing={6}>
         {parameters?.map((parameter) => (
           <FormControl
             key={parameter.id}
@@ -41,6 +45,7 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
             <FormLabel>{parameter.title}</FormLabel>
             <ParameterInput
               type={parameter.type.title}
+              defaultValue={values?.[parameter.handlebar]}
               domain={domain}
               {...register(parameter.handlebar)}
             />
@@ -48,7 +53,7 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
           </FormControl>
         ))}
         <Button type="submit" variant="secondary">
-          Preview
+          {actionLabel}
         </Button>
       </VStack>
     </ActionSheet>
@@ -69,7 +74,12 @@ const ParameterInput: React.VFC<InputProps & ParameterInputProps> = ({
   switch (type) {
     case 'string':
       return (
-        <Input isRequired={false} type="text" value={defaultValue} {...props} />
+        <Input
+          isRequired={false}
+          type="text"
+          defaultValue={defaultValue}
+          {...props}
+        />
       );
     case 'email':
       return (
@@ -77,7 +87,7 @@ const ParameterInput: React.VFC<InputProps & ParameterInputProps> = ({
           <Input
             isRequired={false}
             type="text"
-            value={defaultValue}
+            defaultValue={defaultValue}
             {...props}
           />
           <InputRightAddon flexGrow={1}>
