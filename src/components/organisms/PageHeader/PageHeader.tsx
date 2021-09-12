@@ -5,7 +5,7 @@ import { Box, Container, Heading, Stack } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 
 type PageHeaderProps = {
-  title: string;
+  title: ReactNode;
   breadcrumbs?: Breadcrumb[] | false;
   tools?: ReactNode;
 };

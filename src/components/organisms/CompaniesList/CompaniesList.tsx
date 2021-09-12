@@ -7,7 +7,6 @@ import {
   SimpleGrid,
   SkeletonText,
   SkeletonCircle,
-  Button,
 } from '@chakra-ui/react';
 
 type CompaniesListProps = {
@@ -29,13 +28,6 @@ const CompaniesList: React.VFC<CompaniesListProps> = ({
         {companies.map((company) => (
           <CompanyCard key={company.id} company={company} />
         ))}
-        <Button
-          variant="primary"
-          onClick={() => push('/create-company')}
-          h="100%"
-        >
-          New company
-        </Button>
       </SimpleGrid>
     );
   }

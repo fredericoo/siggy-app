@@ -1,9 +1,11 @@
 import type { Company } from '@prisma/client';
-import { Container, Heading, Skeleton } from '@chakra-ui/react';
+import { Container, Skeleton, Button } from '@chakra-ui/react';
 import CompaniesList from '@/components/organisms/CompaniesList';
 import useSWR from 'swr';
 import axios from 'axios';
 import useUserSession from '@/lib/useUserSession';
+import PageHeader from '@/components/organisms/PageHeader';
+import Link from 'next/link';
 
 const fetcher = async () => {
   const companies = await axios.get<Company[]>('/api/companies');
@@ -17,17 +19,30 @@ const CompaniesRoute: React.VFC = () => {
   const isLoadingCompanies = typeof companies === 'undefined';
 
   return (
-    <Container maxW="container.lg" py={8}>
-      <Heading mb={8}>
-        Mrow,{' '}
-        {isLoadingUser ? (
-          <Skeleton display="inline-block" w="100px" h=".7em" />
-        ) : (
-          session?.user?.name
-        )}
-      </Heading>
-      <CompaniesList companies={companies} isLoading={isLoadingCompanies} />
-    </Container>
+    <>
+      <PageHeader
+        title={
+          <>
+            Mrow,{' '}
+            {isLoadingUser ? (
+              <Skeleton display="inline-block" w="100px" h=".7em" />
+            ) : (
+              session?.user?.name
+            )}
+          </>
+        }
+        tools={
+          <Link href="/create-company" passHref>
+            <Button variant="primary" h="100%">
+              New company
+            </Button>
+          </Link>
+        }
+      />
+      <Container maxW="container.lg" py={8}>
+        <CompaniesList companies={companies} isLoading={isLoadingCompanies} />
+      </Container>
+    </>
   );
 };
 
