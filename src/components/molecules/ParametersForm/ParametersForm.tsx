@@ -44,7 +44,7 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
           >
             <FormLabel>{parameter.title}</FormLabel>
             <ParameterInput
-              type={parameter.type.title}
+              type={parameter?.type?.title || 'string'}
               defaultValue={values?.[parameter.handlebar]}
               domain={domain}
               {...register(parameter.handlebar)}
