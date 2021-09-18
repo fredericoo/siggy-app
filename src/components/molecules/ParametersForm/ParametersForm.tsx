@@ -33,16 +33,15 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
     register,
     handleSubmit,
     setValue,
-    getValues,
     formState: { errors },
   } = useForm();
 
   useEffect(() => {
     defaultValues &&
       Object.entries(defaultValues).forEach(([key, value]) => {
-        !getValues(key) && setValue(key, value);
+        setValue(key, value);
       });
-  }, [setValue, defaultValues, getValues]);
+  }, [setValue, defaultValues]);
 
   return (
     <ActionSheet>
@@ -57,7 +56,9 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
             <ParameterInput
               type={parameter?.type?.title || 'string'}
               domain={domain}
-              {...register(parameter.handlebar)}
+              {...register(parameter.handlebar, {
+                required: parameter.isRequired,
+              })}
             />
             <FormErrorHelper error={errors[parameter.handlebar]} />
           </FormControl>
