@@ -42,7 +42,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       revalidateOnFocus: false,
     }
   );
-  const { data: settings } = useSWR(
+  const { data: settings, mutate } = useSWR(
     `/api/signature/${signature?.id}/settings`,
     fetcher
   );
@@ -112,6 +112,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
         ...formData,
       }),
     });
+    mutate();
     setPreviewParameters(params);
   };
 
@@ -154,7 +155,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                 >
                   <ParametersForm
                     parameters={memberParameters}
-                    values={previewParameters}
+                    defaultValues={previewParameters}
                     onAction={handlePreview}
                     actionLabel="Preview"
                   />
@@ -169,7 +170,9 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                     {settings && (
                       <ParametersForm
                         parameters={companyParameters}
-                        values={JSON.parse(settings.companyParametersJson)}
+                        defaultValues={JSON.parse(
+                          settings.companyParametersJson
+                        )}
                         onAction={handleSave}
                         actionLabel="Save"
                       />
