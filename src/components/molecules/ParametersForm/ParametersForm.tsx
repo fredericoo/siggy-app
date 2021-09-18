@@ -9,6 +9,7 @@ import {
   VStack,
   InputProps,
 } from '@chakra-ui/react';
+import { forwardRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import ActionSheet from '../ActionSheet/ActionSheet';
 import FormErrorHelper from '../FormErrorHelper/FormErrorHelper';
@@ -16,39 +17,57 @@ import FormErrorHelper from '../FormErrorHelper/FormErrorHelper';
 type ParametersFormProps = {
   domain?: string;
   parameters?: TemplateParametersResponse;
-  onPreview: (formData: Record<string, string>) => void;
+  defaultValues?: Record<string, string>;
+  onAction: (formData: Record<string, string>) => void;
+  actionLabel: string;
+  isDisabled?: boolean;
 };
 
 const ParametersForm: React.VFC<ParametersFormProps> = ({
   parameters,
+  defaultValues,
   domain,
-  onPreview,
+  onAction,
+  actionLabel,
+  isDisabled,
 }) => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
+
+  useEffect(() => {
+    defaultValues &&
+      Object.entries(defaultValues).forEach(([key, value]) => {
+        setValue(key, value);
+      });
+  }, [setValue, defaultValues]);
+
   return (
     <ActionSheet>
-      <VStack as="form" onSubmit={handleSubmit(onPreview)} spacing={6}>
+      <VStack as="form" onSubmit={handleSubmit(onAction)} spacing={6}>
         {parameters?.map((parameter) => (
           <FormControl
-            key={parameter.id}
+            key={parameter.handlebar}
             isRequired={parameter.isRequired}
             isInvalid={!!errors[parameter.handlebar]}
           >
             <FormLabel>{parameter.title}</FormLabel>
             <ParameterInput
-              type={parameter.type.title}
+              type={parameter?.type?.title || 'string'}
               domain={domain}
-              {...register(parameter.handlebar)}
+              {...register(parameter.handlebar, {
+                required: parameter.isRequired,
+              })}
+              isDisabled={isDisabled}
             />
             <FormErrorHelper error={errors[parameter.handlebar]} />
           </FormControl>
         ))}
-        <Button type="submit" variant="secondary">
-          Preview
+        <Button type="submit" variant="secondary" isDisabled={isDisabled}>
+          {actionLabel}
         </Button>
       </VStack>
     </ActionSheet>
@@ -60,24 +79,30 @@ type ParameterInputProps = {
   defaultValue?: string;
   domain?: string;
 };
-const ParameterInput: React.VFC<InputProps & ParameterInputProps> = ({
-  type,
-  defaultValue,
-  domain,
-  ...props
-}) => {
+
+const ParameterInput = forwardRef<
+  HTMLInputElement,
+  InputProps & ParameterInputProps
+>(({ type, defaultValue, domain, ...props }, ref) => {
   switch (type) {
     case 'string':
       return (
-        <Input isRequired={false} type="text" value={defaultValue} {...props} />
+        <Input
+          ref={ref}
+          isRequired={false}
+          type="text"
+          defaultValue={defaultValue}
+          {...props}
+        />
       );
     case 'email':
       return (
         <InputGroup>
           <Input
+            ref={ref}
             isRequired={false}
             type="text"
-            value={defaultValue}
+            defaultValue={defaultValue}
             {...props}
           />
           <InputRightAddon flexGrow={1}>
@@ -88,6 +113,7 @@ const ParameterInput: React.VFC<InputProps & ParameterInputProps> = ({
     default:
       return null;
   }
-};
+});
+ParameterInput.displayName = 'ParameterInput';
 
 export default ParametersForm;

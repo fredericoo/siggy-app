@@ -2,9 +2,13 @@ import { Box, Circle, HStack, SkeletonText, Text } from '@chakra-ui/react';
 
 type SignaturePreviewProps = {
   html: string;
+  isLoading?: boolean;
 };
 
-const SignaturePreview: React.VFC<SignaturePreviewProps> = ({ html }) => {
+const SignaturePreview: React.VFC<SignaturePreviewProps> = ({
+  html,
+  isLoading,
+}) => {
   const buttonSize = '.8rem';
   return (
     <Box
@@ -32,11 +36,15 @@ const SignaturePreview: React.VFC<SignaturePreviewProps> = ({ html }) => {
         <SkeletonText mb={4} noOfLines={3} speed={0} endColor="gray.200" />
         <SkeletonText mb={4} noOfLines={4} speed={0} endColor="gray.200" />
         <Text mb={4}>Looking forward to hearing from you!</Text>
-        <Box
-          dangerouslySetInnerHTML={{
-            __html: html,
-          }}
-        />
+        {isLoading ? (
+          <SkeletonText mb={2} noOfLines={3} />
+        ) : (
+          <Box
+            dangerouslySetInnerHTML={{
+              __html: html,
+            }}
+          />
+        )}
       </Box>
     </Box>
   );
