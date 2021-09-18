@@ -20,6 +20,7 @@ type ParametersFormProps = {
   defaultValues?: Record<string, string>;
   onAction: (formData: Record<string, string>) => void;
   actionLabel: string;
+  isDisabled?: boolean;
 };
 
 const ParametersForm: React.VFC<ParametersFormProps> = ({
@@ -28,6 +29,7 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
   domain,
   onAction,
   actionLabel,
+  isDisabled,
 }) => {
   const {
     register,
@@ -59,11 +61,12 @@ const ParametersForm: React.VFC<ParametersFormProps> = ({
               {...register(parameter.handlebar, {
                 required: parameter.isRequired,
               })}
+              isDisabled={isDisabled}
             />
             <FormErrorHelper error={errors[parameter.handlebar]} />
           </FormControl>
         ))}
-        <Button type="submit" variant="secondary">
+        <Button type="submit" variant="secondary" isDisabled={isDisabled}>
           {actionLabel}
         </Button>
       </VStack>

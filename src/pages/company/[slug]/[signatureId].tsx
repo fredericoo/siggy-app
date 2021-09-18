@@ -46,6 +46,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
     `/api/signature/${signature?.id}/settings`,
     fetcher
   );
+  const [isSaving, setIsSaving] = useState(false);
   const [previewParameters, setPreviewParameters] = useState<
     Record<string, string>
   >({});
@@ -70,6 +71,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   );
 
   useEffect(() => {
+    setIsSaving(false);
     if (settings) {
       const newSettingsJson = JSON.parse(settings?.companyParametersJson) || {};
       const newCompanyParams =
@@ -106,11 +108,14 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
         {}
       ) || {};
     const params = { ...previewParameters, ...newCompanyParams, ...formData };
+    const companyParametersJson = JSON.stringify({
+      ...newCompanyParams,
+      ...formData,
+    });
+    if (companyParametersJson === settings.companyParametersJson) return;
+    setIsSaving(true);
     await axios.put(`/api/signature/${signature.id}/settings`, {
-      companyParametersJson: JSON.stringify({
-        ...newCompanyParams,
-        ...formData,
-      }),
+      companyParametersJson,
     });
     mutate();
     setPreviewParameters(params);
@@ -170,11 +175,13 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
                     {settings && (
                       <ParametersForm
                         parameters={companyParameters}
-                        defaultValues={JSON.parse(
-                          settings.companyParametersJson
-                        )}
+                        defaultValues={
+                          !isSaving &&
+                          JSON.parse(settings.companyParametersJson)
+                        }
                         onAction={handleSave}
                         actionLabel="Save"
+                        isDisabled={isSaving}
                       />
                     )}
                   </DynamicContent>
