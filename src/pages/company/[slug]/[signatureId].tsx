@@ -2,21 +2,14 @@ import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent
 import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
+import ExportSignatureMenu from '@/components/molecules/ExportSignatureMenu';
 import SignatureSettings from '@/components/molecules/SignatureSettings';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
 import { parseHandlebars } from '@/lib/handlebars';
 import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
 import { TemplateParametersResponse } from '@/pages/api/template/[templateId]/parameters';
-import {
-  Container,
-  SimpleGrid,
-  Tab,
-  Tabs,
-  TabPanels,
-  TabPanel,
-  TabList,
-} from '@chakra-ui/react';
+import { Box, Container, SimpleGrid, Tab, Tabs, TabPanels, TabPanel, TabList } from '@chakra-ui/react';
 import { Signature, Template, Company } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
@@ -31,10 +24,7 @@ type SignatureDetailsProps = {
 
 const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
 
-const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
-  signature,
-  isAdmin,
-}) => {
+const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({ signature, isAdmin }) => {
   const { data: parameters, error } = useSWR<TemplateParametersResponse>(
     `/api/template/${signature?.template?.id}/parameters`,
     fetcher,
@@ -42,43 +32,25 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       revalidateOnFocus: false,
     }
   );
-  const { data: settings, mutate } = useSWR(
-    `/api/signature/${signature?.id}/settings`,
-    fetcher
-  );
+  const { data: settings, mutate } = useSWR(`/api/signature/${signature?.id}/settings`, fetcher);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewParameters, setPreviewParameters] = useState<
-    Record<string, string>
-  >({});
+  const [previewParameters, setPreviewParameters] = useState<Record<string, string>>({});
 
-  const mockParameters = useMemo(
-    () => generateMockParameters(signature?.company?.domain || 'siggy.app'),
-    [signature]
-  );
+  const mockParameters = useMemo(() => generateMockParameters(signature?.company?.domain || 'siggy.app'), [signature]);
 
   const hasParameters = Object.values(previewParameters).reduce((acc, cur) => {
     if (typeof cur === 'string' && cur.length > 0) return acc + 1;
     return acc;
   }, 0);
 
-  const memberParameters = useMemo(
-    () => parameters?.filter((param) => !param.isCompanyParameter),
-    [parameters]
-  );
-  const companyParameters = useMemo(
-    () => parameters?.filter((param) => param.isCompanyParameter),
-    [parameters]
-  );
+  const memberParameters = useMemo(() => parameters?.filter((param) => !param.isCompanyParameter), [parameters]);
+  const companyParameters = useMemo(() => parameters?.filter((param) => param.isCompanyParameter), [parameters]);
 
   useEffect(() => {
     setIsSaving(false);
     if (settings) {
       const newSettingsJson = JSON.parse(settings?.companyParametersJson) || {};
-      const newCompanyParams =
-        companyParameters?.reduce(
-          (acc, cur) => ({ ...acc, [cur.handlebar]: '' }),
-          {}
-        ) || {};
+      const newCompanyParams = companyParameters?.reduce((acc, cur) => ({ ...acc, [cur.handlebar]: '' }), {}) || {};
       const params = {
         ...previewParameters,
         ...newCompanyParams,
@@ -92,21 +64,13 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   if (!signature) return <UnauthorisedMessage />;
 
   const handlePreview = (formData: Record<string, string>) => {
-    const newMemberParams =
-      memberParameters?.reduce(
-        (acc, cur) => ({ ...acc, [cur.handlebar]: '' }),
-        {}
-      ) || {};
+    const newMemberParams = memberParameters?.reduce((acc, cur) => ({ ...acc, [cur.handlebar]: '' }), {}) || {};
     const params = { ...previewParameters, ...newMemberParams, ...formData };
     setPreviewParameters(params);
   };
 
   const handleSave = async (formData: Record<string, string>) => {
-    const newCompanyParams =
-      companyParameters?.reduce(
-        (acc, cur) => ({ ...acc, [cur.handlebar]: '' }),
-        {}
-      ) || {};
+    const newCompanyParams = companyParameters?.reduce((acc, cur) => ({ ...acc, [cur.handlebar]: '' }), {}) || {};
     const params = { ...previewParameters, ...newCompanyParams, ...formData };
     const companyParametersJson = JSON.stringify({
       ...newCompanyParams,
@@ -137,13 +101,15 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
       />
       <Container maxW="container.xl" py={4}>
         <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
-          <SignaturePreview
-            isLoading={!settings}
-            html={parseHandlebars(
-              signature.template.html,
-              hasParameters ? previewParameters : mockParameters
-            )}
-          />
+          <Box>
+            <SignaturePreview
+              isLoading={!settings}
+              html={parseHandlebars(signature.template.html, hasParameters ? previewParameters : mockParameters)}
+            />
+            <ExportSignatureMenu
+              html={previewParameters ? parseHandlebars(signature.template.html, previewParameters) : undefined}
+            />
+          </Box>
           <Tabs>
             {isAdmin && (
               <TabList>
@@ -154,10 +120,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
             )}
             <TabPanels>
               <TabPanel px={0}>
-                <DynamicContent
-                  isError={error}
-                  isLoading={!parameters && !error}
-                >
+                <DynamicContent isError={error} isLoading={!parameters && !error}>
                   <ParametersForm
                     parameters={memberParameters}
                     defaultValues={previewParameters}
@@ -168,17 +131,11 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
               </TabPanel>
               {isAdmin && !!companyParameters?.length && (
                 <TabPanel px={0}>
-                  <DynamicContent
-                    isError={error}
-                    isLoading={!parameters && !error}
-                  >
+                  <DynamicContent isError={error} isLoading={!parameters && !error}>
                     {settings && (
                       <ParametersForm
                         parameters={companyParameters}
-                        defaultValues={
-                          !isSaving &&
-                          JSON.parse(settings.companyParametersJson)
-                        }
+                        defaultValues={!isSaving && JSON.parse(settings.companyParametersJson)}
                         onAction={handleSave}
                         actionLabel="Save"
                         isDisabled={isSaving}
@@ -189,10 +146,7 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
               )}
               {isAdmin && (
                 <TabPanel px={0}>
-                  <SignatureSettings
-                    signatureId={signature.id}
-                    companySlug={signature.company.slug}
-                  />
+                  <SignatureSettings signatureId={signature.id} companySlug={signature.company.slug} />
                 </TabPanel>
               )}
             </TabPanels>
@@ -203,14 +157,8 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async ({
-  params,
-  req,
-}) => {
-  if (
-    typeof params?.signatureId !== 'string' ||
-    typeof params?.slug !== 'string'
-  )
+export const getServerSideProps: GetServerSideProps = async ({ params, req }) => {
+  if (typeof params?.signatureId !== 'string' || typeof params?.slug !== 'string')
     return { props: { signature: null } };
   try {
     const signature = await prisma.signature.findFirst({
@@ -242,8 +190,7 @@ export const getServerSideProps: GetServerSideProps = async ({
           })
       : [];
 
-    if (!userMatchingCompanies.length && signature?.isPublic !== true)
-      return { props: { signature: null } };
+    if (!userMatchingCompanies.length && signature?.isPublic !== true) return { props: { signature: null } };
 
     return {
       props: { signature, isAdmin: !!userMatchingCompanies.length },

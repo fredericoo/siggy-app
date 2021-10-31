@@ -16,6 +16,10 @@ const Tabs = {
         ':not(:last-child)': { mr: 1 },
         _selected: {
           bg: 'white',
+          boxShadow: 'md',
+        },
+        _focus: {
+          boxShadow: 'md',
         },
         fontSize: 'sm',
       },
