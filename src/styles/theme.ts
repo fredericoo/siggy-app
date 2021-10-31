@@ -1,6 +1,8 @@
 import { extendTheme } from '@chakra-ui/react';
 import Button from './components/Button';
 import Input from './components/Input';
+import Menu from './components/Menu';
+import Modal from './components/Modal';
 import Select from './components/Select';
 import Tabs from './components/Tabs';
 
@@ -32,27 +34,13 @@ const colors = {
 };
 
 export const theme = extendTheme({
-  styles: {
-    global: {
-      '.js-focus-visible :focus:not([data-focus-visible-added])': {
-        outline: 'none',
-        boxShadow: 'none',
-      },
-    },
-  },
   colors,
   components: {
     Button,
     Select,
     Input,
     Tabs,
-    Modal: {
-      parts: ['content', 'header', 'body', 'footer'],
-      baseStyles: {
-        content: {
-          borderRadius: 'xl',
-        },
-      },
-    },
+    Menu,
+    Modal,
   },
 });

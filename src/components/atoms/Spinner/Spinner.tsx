@@ -10,9 +10,9 @@ const spin = keyframes({
   },
 });
 
-const Spinner: React.VFC = () => {
+const Spinner: React.VFC<{ size?: number }> = ({ size = 8 }) => {
   return (
-    <Box w="8" h="8" animation={`${spin} 1s linear infinite`} color="gray.600">
+    <Box w={size} h={size} animation={`${spin} 1s linear infinite`} color="gray.600">
       <LoadingIcon />
     </Box>
   );

@@ -1,4 +1,4 @@
-import Card from '@/components/atoms/Card/Card';
+import Card from '@/components/atoms/Card';
 import { Plan } from '@/types/plan';
 import { Box, Heading, Text } from '@chakra-ui/react';
 
@@ -10,11 +10,7 @@ export type PlanCardProps = {
 
 const PlanCard: React.VFC<PlanCardProps> = ({ plan, isSelected, onSelect }) => {
   return (
-    <Card
-      type="button"
-      onClick={() => onSelect && onSelect(plan.price.id)}
-      isSelected={isSelected}
-    >
+    <Card type="button" onClick={() => onSelect && onSelect(plan.price.id)} isSelected={isSelected}>
       <Heading as="h3" size="sm">
         {plan.product.name}
       </Heading>
