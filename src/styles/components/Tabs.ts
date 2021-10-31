@@ -1,23 +1,28 @@
 const Tabs = {
-  parts: ['tab', 'tablist'],
+  parts: ['root', 'tab', 'tablist'],
   variants: {
     custom: {
+      root: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      },
       tab: {
+        color: 'gray.600',
         borderRadius: 'full',
         _hover: {
           bg: 'gray.100',
         },
-
         ':not(:last-child)': { mr: 1 },
         _selected: {
-          bg: 'orange.200',
+          bg: 'white',
         },
         fontSize: 'sm',
       },
       tablist: {
-        display: 'inline-flex',
+        display: 'flex',
         p: 1,
-        bg: 'white',
+        bg: 'gray.200',
         borderRadius: 'full',
       },
     },
