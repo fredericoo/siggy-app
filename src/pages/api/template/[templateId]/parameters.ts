@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { TemplateParameter, TemplateParameterType } from '@prisma/client';
 
 export type TemplateParametersResponse = (TemplateParameter & {
-  type: TemplateParameterType;
+  type?: TemplateParameterType;
 })[];
 
 const handle: NextApiHandler = async (req, res) => {

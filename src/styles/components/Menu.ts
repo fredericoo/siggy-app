@@ -11,7 +11,7 @@ const Menu = {
         },
       },
       item: {
-        borderRadius: 'lg',
+        borderRadius: 'md',
         _hover: {
           bg: 'orange.200',
         },
