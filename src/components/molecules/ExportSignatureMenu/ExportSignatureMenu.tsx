@@ -1,7 +1,8 @@
-import { Button, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react';
+import { Button, Menu, MenuButton, MenuList, MenuItem, useClipboard } from '@chakra-ui/react';
 
 type Props = {
   html?: string;
+  isDisabled?: boolean;
 };
 
 const downloadFromHtml = (html: string, filename: string) => {
@@ -18,16 +19,18 @@ const downloadFromHtml = (html: string, filename: string) => {
   document.body.removeChild(link);
 };
 
-const ExportSignatureMenu: React.VFC<Props> = ({ html }) => {
+const ExportSignatureMenu: React.VFC<Props> = ({ html, isDisabled }) => {
+  const { onCopy } = useClipboard(html || '');
   if (!html) return null;
 
   return (
     <Menu>
-      <MenuButton as={Button} variant="primary">
-        Save as…
+      <MenuButton as={Button} variant="primary" isDisabled={isDisabled}>
+        Use this signature
       </MenuButton>
       <MenuList>
-        <MenuItem onClick={() => downloadFromHtml(html, 'signature.html')}>html file</MenuItem>
+        <MenuItem onClick={onCopy}>Copy to clipboard</MenuItem>
+        <MenuItem onClick={() => downloadFromHtml(html, 'signature.html')}>Download html file</MenuItem>
       </MenuList>
     </Menu>
   );

@@ -3,7 +3,7 @@ const Button = {
     variant: 'secondary',
   },
   baseStyle: {
-    borderRadius: 'xl',
+    borderRadius: 'lg',
   },
   sizes: {
     md: {

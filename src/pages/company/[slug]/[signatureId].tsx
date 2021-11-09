@@ -1,21 +1,32 @@
 import DynamicContent from '@/components/molecules/DynamicContent/DynamicContent';
-import ParametersForm from '@/components/molecules/ParametersForm/ParametersForm';
 import SignaturePreview from '@/components/molecules/SignaturePreview/SignaturePreview';
 import PageHeader from '@/components/organisms/PageHeader';
 import ExportSignatureMenu from '@/components/molecules/ExportSignatureMenu';
 import SignatureSettings from '@/components/molecules/SignatureSettings';
 import UnauthorisedMessage from '@/components/organisms/UnauthorisedMessage';
-import { parseHandlebars } from '@/lib/handlebars';
-import { generateMockParameters } from '@/lib/mockParameters';
 import prisma from '@/lib/prisma';
 import { TemplateParametersResponse } from '@/pages/api/template/[templateId]/parameters';
-import { Box, Container, SimpleGrid, Tab, Tabs, TabPanels, TabPanel, TabList } from '@chakra-ui/react';
+import {
+  VStack,
+  Container,
+  SimpleGrid,
+  Tab,
+  Tabs,
+  TabPanels,
+  TabPanel,
+  TabList,
+  Button,
+  HStack,
+} from '@chakra-ui/react';
 import { Signature, Template, Company } from '@prisma/client';
 import axios from 'axios';
 import { GetServerSideProps } from 'next';
 import { getSession } from 'next-auth/client';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import useSWR from 'swr';
+import { FormProvider, useForm } from 'react-hook-form';
+import ParameterInput from '@/components/molecules/ParameterInput';
+import ActionSheet from '@/components/molecules/ActionSheet';
 
 type SignatureDetailsProps = {
   signature: Signature & { template: Template } & { company: Company };
@@ -33,56 +44,29 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({ signature, is
     }
   );
   const { data: settings, mutate } = useSWR(`/api/signature/${signature?.id}/settings`, fetcher);
-  const [isSaving, setIsSaving] = useState(false);
-  const [previewParameters, setPreviewParameters] = useState<Record<string, string>>({});
-
-  const mockParameters = useMemo(() => generateMockParameters(signature?.company?.domain || 'siggy.app'), [signature]);
-
-  const hasParameters = Object.values(previewParameters).reduce((acc, cur) => {
-    if (typeof cur === 'string' && cur.length > 0) return acc + 1;
-    return acc;
-  }, 0);
+  const form = useForm();
 
   const memberParameters = useMemo(() => parameters?.filter((param) => !param.isCompanyParameter), [parameters]);
   const companyParameters = useMemo(() => parameters?.filter((param) => param.isCompanyParameter), [parameters]);
+  const savedCompanyParameters = useMemo(() => JSON.parse(settings?.companyParametersJson || '{}'), [settings]);
 
-  useEffect(() => {
-    setIsSaving(false);
-    if (settings) {
-      const newSettingsJson = JSON.parse(settings?.companyParametersJson) || {};
-      const newCompanyParams = companyParameters?.reduce((acc, cur) => ({ ...acc, [cur.handlebar]: '' }), {}) || {};
-      const params = {
-        ...previewParameters,
-        ...newCompanyParams,
-        ...newSettingsJson,
-      };
-      setPreviewParameters(params);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyParameters, setPreviewParameters, settings]);
+  const isCompanyParametersDirty = !!Object.keys(form.formState.dirtyFields).find((field) =>
+    companyParameters?.find((parameter) => parameter.handlebar === field)
+  );
 
   if (!signature) return <UnauthorisedMessage />;
 
-  const handlePreview = (formData: Record<string, string>) => {
-    const newMemberParams = memberParameters?.reduce((acc, cur) => ({ ...acc, [cur.handlebar]: '' }), {}) || {};
-    const params = { ...previewParameters, ...newMemberParams, ...formData };
-    setPreviewParameters(params);
-  };
-
   const handleSave = async (formData: Record<string, string>) => {
-    const newCompanyParams = companyParameters?.reduce((acc, cur) => ({ ...acc, [cur.handlebar]: '' }), {}) || {};
-    const params = { ...previewParameters, ...newCompanyParams, ...formData };
-    const companyParametersJson = JSON.stringify({
-      ...newCompanyParams,
-      ...formData,
-    });
-    if (companyParametersJson === settings.companyParametersJson) return;
-    setIsSaving(true);
+    const companyFormData = Object.fromEntries(
+      companyParameters?.map((parameter) => [parameter.handlebar, formData[parameter.handlebar]]) || []
+    );
+    const companyParametersJson = JSON.stringify(companyFormData);
+
     await axios.put(`/api/signature/${signature.id}/settings`, {
       companyParametersJson,
     });
+    form.reset(formData);
     mutate();
-    setPreviewParameters(params);
   };
 
   return (
@@ -100,58 +84,87 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({ signature, is
         }
       />
       <Container maxW="container.xl" py={4}>
-        <SimpleGrid minChildWidth="400px" gap={8} alignItems="start">
-          <Box>
-            <SignaturePreview
-              isLoading={!settings}
-              html={parseHandlebars(signature.template.html, hasParameters ? previewParameters : mockParameters)}
-            />
-            <ExportSignatureMenu
-              html={previewParameters ? parseHandlebars(signature.template.html, previewParameters) : undefined}
-            />
-          </Box>
-          <Tabs>
-            {isAdmin && (
-              <TabList>
-                <Tab>Member</Tab>
-                {!!companyParameters?.length && <Tab>Company</Tab>}
-                {<Tab>Settings</Tab>}
-              </TabList>
-            )}
-            <TabPanels>
-              <TabPanel px={0}>
-                <DynamicContent isError={error} isLoading={!parameters && !error}>
-                  <ParametersForm
-                    parameters={memberParameters}
-                    defaultValues={previewParameters}
-                    onAction={handlePreview}
-                    actionLabel="Preview"
-                  />
-                </DynamicContent>
-              </TabPanel>
-              {isAdmin && !!companyParameters?.length && (
-                <TabPanel px={0}>
-                  <DynamicContent isError={error} isLoading={!parameters && !error}>
-                    {settings && (
-                      <ParametersForm
-                        parameters={companyParameters}
-                        defaultValues={!isSaving && JSON.parse(settings.companyParametersJson)}
-                        onAction={handleSave}
-                        actionLabel="Save"
-                        isDisabled={isSaving}
-                      />
-                    )}
-                  </DynamicContent>
-                </TabPanel>
-              )}
+        <FormProvider {...form}>
+          <SimpleGrid columns={{ xl: 2 }} gap={8} alignItems="start">
+            <VStack>
+              <SignaturePreview
+                companyParameters={savedCompanyParameters}
+                watchFields={memberParameters?.map((parameter) => parameter.handlebar)}
+                control={form.control}
+                isLoading={!settings}
+                html={signature.template.html}
+              />
+              <ExportSignatureMenu html={signature.template.html} />
+            </VStack>
+            <Tabs as="form" onSubmit={form.handleSubmit(handleSave)}>
               {isAdmin && (
-                <TabPanel px={0}>
-                  <SignatureSettings signatureId={signature.id} companySlug={signature.company.slug} />
-                </TabPanel>
+                <TabList>
+                  <Tab>Member</Tab>
+                  {!!companyParameters?.length && <Tab>Company</Tab>}
+                  {<Tab>Settings</Tab>}
+                </TabList>
               )}
-            </TabPanels>
-          </Tabs>
-        </SimpleGrid>
+              <TabPanels>
+                <TabPanel px={0}>
+                  <ActionSheet>
+                    <DynamicContent isError={error} isLoading={!parameters && !error}>
+                      <VStack spacing={4}>
+                        {memberParameters?.map((parameter) => (
+                          <ParameterInput
+                            key={parameter.handlebar}
+                            name={parameter.handlebar}
+                            type={parameter?.type?.title}
+                            isRequired={false}
+                            label={parameter.title}
+                          />
+                        ))}
+                      </VStack>
+                    </DynamicContent>
+                  </ActionSheet>
+                </TabPanel>
+                {isAdmin && !!companyParameters?.length && (
+                  <TabPanel px={0}>
+                    <DynamicContent isError={error} isLoading={!parameters && !error}>
+                      {settings && (
+                        <ActionSheet
+                          footer={
+                            isCompanyParametersDirty && (
+                              <HStack justify="center">
+                                <Button type="submit" variant="primary" isLoading={form.formState.isSubmitting}>
+                                  Save changes
+                                </Button>
+                              </HStack>
+                            )
+                          }
+                        >
+                          <VStack spacing={4}>
+                            {companyParameters.map((parameter) => (
+                              <ParameterInput
+                                name={parameter.handlebar}
+                                label={parameter.title}
+                                key={parameter.handlebar}
+                                type={parameter?.type?.title}
+                                isRequired={parameter.isRequired}
+                                isDisabled={form.formState.isSubmitting}
+                                defaultValue={savedCompanyParameters[parameter.handlebar]}
+                                highlightDirty
+                              />
+                            ))}
+                          </VStack>
+                        </ActionSheet>
+                      )}
+                    </DynamicContent>
+                  </TabPanel>
+                )}
+                {isAdmin && (
+                  <TabPanel px={0}>
+                    <SignatureSettings signatureId={signature.id} companySlug={signature.company.slug} />
+                  </TabPanel>
+                )}
+              </TabPanels>
+            </Tabs>
+          </SimpleGrid>
+        </FormProvider>
       </Container>
     </>
   );

@@ -21,8 +21,12 @@ const SignaturePublicSwitch: React.VFC<Props> = ({ signatureId, companySlug }) =
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const toast = useToast();
-  const fullUrl = window.location.href || '';
+
+  const [fullUrl, setFullUrl] = useState('');
   const { onCopy } = useClipboard(fullUrl);
+  useEffect(() => {
+    setFullUrl(window.location.href);
+  }, []);
 
   const { data: settings, mutate } = useSWR(`/api/signature/${signatureId}/settings`, fetcher);
   useEffect(() => {
