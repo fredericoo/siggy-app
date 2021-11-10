@@ -36,17 +36,14 @@ const fetcher = async (endpoint: string) => (await axios.get(endpoint)).data;
 const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   const { push } = useRouter();
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
-  const { data: signatures } = useSWR<SignaturesQueryResponse>(
-    `/api/company/${company?.slug}/signatures`,
-    fetcher
-  );
+  const { data: signatures } = useSWR<SignaturesQueryResponse>(`/api/company/${company?.slug}/signatures`, fetcher);
 
   if (!company) return <UnauthorisedMessage />;
 
   const handleDelete = async () => {
     setIsLoadingDelete(true);
     try {
-      const request = await axios.post(`/api/company/${company.slug}/delete`);
+      const request = await axios.delete(`/api/company/${company.slug}`);
       if (request.status === 200) {
         push('/companies');
       }
@@ -61,13 +58,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
       <PageHeader
         title={company.title}
         breadcrumbs={[{ label: 'Companies', href: '/companies' }]}
-        tools={
-          <SubscriptionStatus
-            align="initial"
-            w={{ md: '200px' }}
-            companySlug={company.slug}
-          />
-        }
+        tools={<SubscriptionStatus align="initial" w={{ md: '200px' }} companySlug={company.slug} />}
       />
 
       <Container maxW="container.lg">
@@ -88,10 +79,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
                       href={`/company/${company.slug}/${signature.id}`}
                     />
                   ))}
-                <Link
-                  href={`/company/${company.slug}/create-signature`}
-                  passHref
-                >
+                <Link href={`/company/${company.slug}/create-signature`} passHref>
                   <Button variant="primary" as="a">
                     New signature
                   </Button>
@@ -108,11 +96,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
               <Heading as="h3" size="md" my={4}>
                 Danger zone
               </Heading>
-              <DeleteButton
-                isLoading={isLoadingDelete}
-                onDelete={handleDelete}
-                keyword={company.slug.toUpperCase()}
-              >
+              <DeleteButton isLoading={isLoadingDelete} onDelete={handleDelete} keyword={company.slug.toUpperCase()}>
                 Delete company
               </DeleteButton>
             </TabPanel>
@@ -123,10 +107,7 @@ const CompanyDetailsRoute: React.VFC<CompanyDetailsProps> = ({ company }) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async ({
-  params,
-  req,
-}) => {
+export const getServerSideProps: GetServerSideProps = async ({ params, req }) => {
   const session = await getSession({ req });
   if (!session || !params?.slug) return { props: { signature: null } };
 
@@ -139,8 +120,7 @@ export const getServerSideProps: GetServerSideProps = async ({
           })
           .companies()
       : [];
-    const company =
-      userCompanies.find((company) => company.slug === params?.slug) || null;
+    const company = userCompanies.find((company) => company.slug === params?.slug) || null;
 
     return {
       props: { company },
