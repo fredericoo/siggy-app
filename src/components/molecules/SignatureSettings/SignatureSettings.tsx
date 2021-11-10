@@ -36,7 +36,7 @@ const SignaturePublicSwitch: React.VFC<Props> = ({ signatureId, companySlug }) =
   const handleDelete = async () => {
     setIsLoadingDelete(true);
     try {
-      const request = await axios.post(`/api/signature/${signatureId}/delete`);
+      const request = await axios.delete(`/api/signature/${signatureId}`);
       if (request.status === 200) {
         push(`/company/${companySlug}`);
       }

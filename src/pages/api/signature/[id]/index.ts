@@ -1,6 +1,18 @@
-import { NextApiHandler } from 'next';
+import { NextApiHandler, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/client';
 import prisma from '@/lib/prisma';
+import { Signature } from '.prisma/client';
+
+const handleDelete = async (signature: Pick<Signature, 'id'>, res: NextApiResponse) => {
+  try {
+    await prisma.signature.delete({
+      where: { id: signature.id },
+    });
+    res.json({ message: 'Signature deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Could not delete company', error });
+  }
+};
 
 const handle: NextApiHandler = async (req, res) => {
   const { id } = req.query;
@@ -22,7 +34,7 @@ const handle: NextApiHandler = async (req, res) => {
 
   const signature = await prisma.signature.findUnique({
     where: { id },
-    select: { companySlug: true },
+    select: { id: true, companySlug: true },
   });
 
   if (!signature) {
@@ -43,11 +55,14 @@ const handle: NextApiHandler = async (req, res) => {
     return;
   }
 
-  const result = await prisma.signature.delete({
-    where: { id },
-  });
+  if (req.method === 'DELETE') {
+    await handleDelete(signature, res);
+    return;
+  }
 
-  res.json(result);
+  if (req.method === 'GET') {
+    res.json({ signature });
+  }
 };
 
 export default handle;
