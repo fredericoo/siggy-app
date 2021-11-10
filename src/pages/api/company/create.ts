@@ -34,6 +34,7 @@ const handle: NextApiHandler = async (req, res) => {
     line_items: [{ price: priceId, quantity: 1 }],
     mode: 'subscription',
   });
+  const total = stripeSession?.amount_total || 0;
 
   const result = await prisma.company.create({
     data: {
@@ -45,7 +46,8 @@ const handle: NextApiHandler = async (req, res) => {
       admin: { connect: { id: session?.id } },
     },
   });
-  res.json({ ...result, redirectURL: stripeSession.url });
+
+  res.json({ ...result, redirectURL: total > 0 ? stripeSession.url : `/company/${slug}` });
 };
 
 export default handle;

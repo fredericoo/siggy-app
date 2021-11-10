@@ -3,6 +3,7 @@ const Input = {
     outline: {
       field: {
         borderColor: 'gray.200',
+        borderRadius: 'lg',
         bg: 'white',
         _focus: {
           borderColor: 'gray.400',
@@ -11,6 +12,7 @@ const Input = {
       },
     },
   },
+
   defaultProps: {
     isRequired: false,
   },

@@ -1,38 +1,104 @@
-import { Button, Menu, MenuButton, MenuList, MenuItem, useClipboard } from '@chakra-ui/react';
+import { parseHandlebars } from '@/lib/handlebars';
+import {
+  Button,
+  useClipboard,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  ModalCloseButton,
+  Heading,
+  useDisclosure,
+  Text,
+  Code,
+  Kbd,
+  styled,
+  Box,
+  Stack,
+} from '@chakra-ui/react';
+import { useForm, useWatch } from 'react-hook-form';
+import { GmailStepOne } from './steps/GmailSteps';
 
 type Props = {
   html?: string;
   isDisabled?: boolean;
+  control: ReturnType<typeof useForm>['control'];
 };
 
-const downloadFromHtml = (html: string, filename: string) => {
-  if (!window) return;
-  const blob = new Blob(['\ufeff', html]);
-  const url = URL.createObjectURL(blob);
+const Step = styled(Box);
 
-  const link = document.createElement('a');
-  link.download = filename;
-  link.target = '_blank';
-  link.href = url;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
-const ExportSignatureMenu: React.VFC<Props> = ({ html, isDisabled }) => {
-  const { onCopy } = useClipboard(html || '');
+const ExportSignatureMenu: React.FC<Props> = ({ html, isDisabled, children, control }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const fields = useWatch({ control });
+  const { onCopy, hasCopied } = useClipboard(parseHandlebars(html || '', fields), {
+    format: 'text/html',
+    timeout: 1000,
+  });
   if (!html) return null;
 
   return (
-    <Menu>
-      <MenuButton as={Button} variant="primary" isDisabled={isDisabled}>
-        Use this signature
-      </MenuButton>
-      <MenuList>
-        <MenuItem onClick={onCopy}>Copy to clipboard</MenuItem>
-        <MenuItem onClick={() => downloadFromHtml(html, 'signature.html')}>Download html file</MenuItem>
-      </MenuList>
-    </Menu>
+    <>
+      <Button w="100%" variant="primary" isDisabled={isDisabled} onClick={onOpen}>
+        {children}
+      </Button>
+
+      <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+        <ModalOverlay />
+        <ModalContent p={2}>
+          <ModalCloseButton />
+          <Tabs>
+            <TabList>
+              <Tab>Gmail</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <Stack spacing={8}>
+                  <Step>
+                    <GmailStepOne />
+                    <Heading size="sm" as="h3">
+                      Go to the settings page
+                    </Heading>
+                    <Text>Click on the cogwheel icon on the top right hand side of gmail.</Text>
+                  </Step>
+
+                  <Step>
+                    <Heading size="sm" as="h3">
+                      Add a new signature
+                    </Heading>
+                    <Text>
+                      Under Signature, tap the <Kbd>Create New</Kbd> button and name your signature. A cool name would
+                      be something like <Code>Amazing new signature</Code>
+                    </Text>
+                  </Step>
+
+                  <Step>
+                    <Heading size="sm" as="h3">
+                      Paste the signature
+                    </Heading>
+                    <Text>Copy the signature and paste it into the text field.</Text>
+
+                    <Button onClick={onCopy}>{hasCopied ? 'Done!' : 'Copy to clipboard'}</Button>
+                  </Step>
+
+                  <Step>
+                    <Heading size="sm" as="h3">
+                      Save the signature
+                    </Heading>
+                    <Text>
+                      Click on the <Kbd>Save Changes</Kbd> button at the bottom.
+                    </Text>
+                  </Step>
+                </Stack>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 

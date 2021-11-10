@@ -94,7 +94,6 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({ signature, is
                 isLoading={!settings}
                 html={signature.template.html}
               />
-              <ExportSignatureMenu html={signature.template.html} />
             </VStack>
             <Tabs as="form" onSubmit={form.handleSubmit(handleSave)}>
               {isAdmin && (
@@ -106,7 +105,13 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({ signature, is
               )}
               <TabPanels>
                 <TabPanel px={0}>
-                  <ActionSheet>
+                  <ActionSheet
+                    footer={
+                      <ExportSignatureMenu control={form.control} html={signature.template.html}>
+                        Use this signature
+                      </ExportSignatureMenu>
+                    }
+                  >
                     <DynamicContent isError={error} isLoading={!parameters && !error}>
                       <VStack spacing={4}>
                         {memberParameters?.map((parameter) => (
