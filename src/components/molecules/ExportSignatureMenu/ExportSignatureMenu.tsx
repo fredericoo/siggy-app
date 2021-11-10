@@ -1,3 +1,4 @@
+import { parseHandlebars } from '@/lib/handlebars';
 import {
   Button,
   useClipboard,
@@ -19,18 +20,24 @@ import {
   Box,
   Stack,
 } from '@chakra-ui/react';
-import downloadFromHtml from './downloadFromHtml';
+import { useForm, useWatch } from 'react-hook-form';
+import { GmailStepOne } from './steps/GmailSteps';
 
 type Props = {
   html?: string;
   isDisabled?: boolean;
+  control: ReturnType<typeof useForm>['control'];
 };
 
 const Step = styled(Box);
 
-const ExportSignatureMenu: React.FC<Props> = ({ html, isDisabled, children }) => {
+const ExportSignatureMenu: React.FC<Props> = ({ html, isDisabled, children, control }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { onCopy, hasCopied } = useClipboard(html || '', { format: 'text/html', timeout: 1000 });
+  const fields = useWatch({ control });
+  const { onCopy, hasCopied } = useClipboard(parseHandlebars(html || '', fields), {
+    format: 'text/html',
+    timeout: 1000,
+  });
   if (!html) return null;
 
   return (
@@ -46,14 +53,12 @@ const ExportSignatureMenu: React.FC<Props> = ({ html, isDisabled, children }) =>
           <Tabs>
             <TabList>
               <Tab>Gmail</Tab>
-              <Tab>Outlook</Tab>
-              <Tab>Apple Mail</Tab>
-              <Tab>Other</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
                 <Stack spacing={8}>
                   <Step>
+                    <GmailStepOne />
                     <Heading size="sm" as="h3">
                       Go to the settings page
                     </Heading>
@@ -84,25 +89,10 @@ const ExportSignatureMenu: React.FC<Props> = ({ html, isDisabled, children }) =>
                       Save the signature
                     </Heading>
                     <Text>
-                      Click on the <Kbd>Save</Kbd> button.
+                      Click on the <Kbd>Save Changes</Kbd> button at the bottom.
                     </Text>
                   </Step>
                 </Stack>
-              </TabPanel>
-              <TabPanel>
-                <Button onClick={onCopy}>Copy to clipboard</Button>
-              </TabPanel>
-              <TabPanel>
-                <Code borderRadius="md" maxH="6rem" overflow="scroll">
-                  {html}
-                </Code>
-                <Button onClick={() => downloadFromHtml(html, 'signature.html')}>Download html file</Button>
-              </TabPanel>
-              <TabPanel>
-                <Code borderRadius="md" maxH="6rem" overflow="scroll">
-                  {html}
-                </Code>
-                <Button onClick={() => downloadFromHtml(html, 'signature.html')}>Download html file</Button>
               </TabPanel>
             </TabPanels>
           </Tabs>

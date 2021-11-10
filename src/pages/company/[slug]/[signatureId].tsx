@@ -107,7 +107,9 @@ const SignatureDetailsRoute: React.VFC<SignatureDetailsProps> = ({ signature, is
                 <TabPanel px={0}>
                   <ActionSheet
                     footer={
-                      <ExportSignatureMenu html={signature.template.html}>Use this signature</ExportSignatureMenu>
+                      <ExportSignatureMenu control={form.control} html={signature.template.html}>
+                        Use this signature
+                      </ExportSignatureMenu>
                     }
                   >
                     <DynamicContent isError={error} isLoading={!parameters && !error}>
